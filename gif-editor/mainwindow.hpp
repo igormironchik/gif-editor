@@ -20,35 +20,47 @@
 	along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#ifndef GIF_EDITOR_MAINWINDOW_HPP_INCLUDED
+#define GIF_EDITOR_MAINWINDOW_HPP_INCLUDED
+
 // Qt include.
-#include <QApplication>
-#include <QTranslator>
-#include <QLocale>
-
-// GIF editor include.
-#include "mainwindow.hpp"
+#include <QMainWindow>
+#include <QScopedPointer>
 
 
-int main( int argc, char ** argv )
+//
+// MainWindow
+//
+
+class MainWindowPrivate;
+
+//! Main window.
+class MainWindow final
+	:	public QMainWindow
 {
-	QApplication app( argc, argv );
+	Q_OBJECT
 
-	QIcon appIcon( ":/img/icon_256x256.png" );
-	appIcon.addFile( ":/img/icon_128x128.png" );
-	appIcon.addFile( ":/img/icon_64x64.png" );
-	appIcon.addFile( ":/img/icon_48x48.png" );
-	appIcon.addFile( ":/img/icon_32x32.png" );
-	appIcon.addFile( ":/img/icon_22x22.png" );
-	appIcon.addFile( ":/img/icon_16x16.png" );
-	app.setWindowIcon( appIcon );
+public:
+	MainWindow();
+	~MainWindow() noexcept override;
 
-	QTranslator appTranslator;
-	appTranslator.load( "./tr/gif-editor_" + QLocale::system().name() );
-	app.installTranslator( &appTranslator );
+protected:
+	void closeEvent( QCloseEvent * e ) override;
 
-	MainWindow w;
-	w.resize( 800, 600 );
-	w.show();
+private slots:
+	//! Open GIF.
+	void openGif();
+	//! Save GIF.
+	void saveGif();
+	//! Save GIF as.
+	void saveGifAs();
+	//! Quit.
+	void quit();
 
-	return app.exec();
-}
+private:
+	Q_DISABLE_COPY( MainWindow )
+
+	QScopedPointer< MainWindowPrivate > d;
+}; // class MainWindow
+
+#endif // GIF_EDITOR_MAINWINDOW_HPP_INCLUDED
