@@ -109,12 +109,7 @@ MainWindow::quit()
 			tr( "GIF was changed. Do you want to save changes?" ) );
 
 		if( btn == QMessageBox::Yes )
-		{
-			if( !d->m_currentGif.isEmpty() )
-				saveGif();
-			else
-				saveGifAs();
-		}
+			saveGif();
 	}
 
 	QApplication::quit();
