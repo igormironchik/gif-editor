@@ -53,6 +53,10 @@ public:
 	//! \return Current frame.
 	Frame * currentFrame() const;
 
+private slots:
+	//! Frame selected.
+	void frameSelected( int idx );
+
 private:
 	Q_DISABLE_COPY( View )
 

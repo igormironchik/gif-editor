@@ -63,6 +63,11 @@ public:
 	//! Set counter.
 	void setCounter( int c );
 
+	//! \return Is this frame current?
+	bool isCurrent() const;
+	//! Set current flag.
+	void setCurrent( bool on = true );
+
 private:
 	Q_DISABLE_COPY( FrameOnTape )
 

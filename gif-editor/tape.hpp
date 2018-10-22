@@ -46,6 +46,8 @@ class Tape final
 signals:
 	//! Frame clicked.
 	void clicked( int idx );
+	//! Current frame changed.
+	void currentFrameChanged( int idx );
 
 public:
 	Tape( QWidget * parent = nullptr );
@@ -57,6 +59,10 @@ public:
 	void addFrame( const QImage & img );
 	//! \return Frame.
 	FrameOnTape * frame( int idx ) const;
+	//! \return Current frame.
+	FrameOnTape * currentFrame() const;
+	//! Set current frame.
+	void setCurrentFrame( int idx );
 	//! Remove frame.
 	void removeFrame( int idx );
 	//! Clear.

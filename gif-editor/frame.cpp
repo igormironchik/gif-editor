@@ -76,6 +76,8 @@ FramePrivate::createThumbnail()
 			break;
 		}
 	}
+	else
+		m_thumbnail = m_image;
 }
 
 void

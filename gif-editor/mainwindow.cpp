@@ -161,6 +161,9 @@ MainWindow::openGif()
 				{
 					this->d->m_view->tape()->addFrame( this->d->convert( img ) );
 				} );
+
+			if( !d->m_frames.empty() )
+				d->m_view->tape()->setCurrentFrame( 1 );
 		}
 		catch( const Magick::Exception & x )
 		{

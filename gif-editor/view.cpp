@@ -24,6 +24,7 @@
 #include "view.hpp"
 #include "tape.hpp"
 #include "frame.hpp"
+#include "frameontape.hpp"
 
 // Qt include.
 #include <QVBoxLayout>
@@ -75,6 +76,9 @@ View::View( QWidget * parent )
 	scroll->setWidget( d->m_tape );
 
 	layout->addWidget( scroll );
+
+	connect( d->m_tape, &Tape::currentFrameChanged,
+		this, &View::frameSelected );
 }
 
 View::~View() noexcept
@@ -91,4 +95,10 @@ Frame *
 View::currentFrame() const
 {
 	return d->m_currentFrame;
+}
+
+void
+View::frameSelected( int idx )
+{
+	d->m_currentFrame->setImage( d->m_tape->frame( idx )->image() );
 }

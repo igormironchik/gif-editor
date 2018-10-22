@@ -36,14 +36,18 @@
 class TapePrivate {
 public:
 	TapePrivate( Tape * parent )
-		:	m_layout( new QHBoxLayout( parent ) )
+		:	m_currentFrame( nullptr )
+		,	m_layout( new QHBoxLayout( parent ) )
 		,	q( parent )
 	{
-		m_layout->setMargin( 0 );
+		m_layout->setMargin( 5 );
+		m_layout->setSpacing( 5 );
 	}
 
 	//! Frames.
 	QList< FrameOnTape* > m_frames;
+	//! Current frame.
+	FrameOnTape * m_currentFrame;
 	//! Layout.
 	QHBoxLayout * m_layout;
 	//! Parent.
@@ -77,7 +81,20 @@ Tape::addFrame( const QImage & img )
 	d->m_frames.append( new FrameOnTape( img, count() + 1, this ) );
 	d->m_layout->addWidget( d->m_frames.back() );
 
-	connect( d->m_frames.back(), &FrameOnTape::clicked, this, &Tape::clicked );
+	connect( d->m_frames.back(), &FrameOnTape::clicked,
+		[this] ( int idx )
+		{
+			if( this->currentFrame() )
+				this->currentFrame()->setCurrent( false );
+
+			this->d->m_currentFrame = this->frame( idx );
+
+			this->d->m_currentFrame->setCurrent( true );
+
+			emit this->currentFrameChanged( idx );
+
+			emit this->clicked( idx );
+		} );
 
 	adjustSize();
 }
@@ -91,6 +108,29 @@ Tape::frame( int idx ) const
 		return nullptr;
 }
 
+FrameOnTape *
+Tape::currentFrame() const
+{
+	return d->m_currentFrame;
+}
+
+void
+Tape::setCurrentFrame( int idx )
+{
+	if( idx >= 1 && idx <= count() )
+	{
+		if( d->m_currentFrame )
+			d->m_currentFrame->setCurrent( false );
+
+		d->m_currentFrame = frame( idx );
+		d->m_currentFrame->setCurrent( true );
+
+		emit currentFrameChanged( idx );
+	}
+	else
+		d->m_currentFrame = nullptr;
+}
+
 void
 Tape::removeFrame( int idx )
 {
@@ -98,6 +138,29 @@ Tape::removeFrame( int idx )
 	{
 		d->m_layout->removeWidget( d->m_frames.at( idx - 1 ) );
 		d->m_frames.at( idx - 1 )->deleteLater();
+
+		if( d->m_frames.at( idx - 1 ) == d->m_currentFrame )
+		{
+			d->m_currentFrame = nullptr;
+
+			if( idx > 0 )
+			{
+				d->m_currentFrame = d->m_frames.at( idx - 2 );
+				d->m_currentFrame->setCurrent( true );
+
+				emit currentFrameChanged( idx - 1 );
+			}
+			else if( idx < count() )
+			{
+				d->m_currentFrame = d->m_frames.at( idx );
+				d->m_currentFrame->setCurrent( true );
+
+				emit currentFrameChanged( idx + 1 );
+			}
+			else
+				d->m_currentFrame = nullptr;
+		}
+
 		d->m_frames.removeAt( idx - 1 );
 
 		adjustSize();

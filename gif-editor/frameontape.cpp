@@ -39,6 +39,7 @@ class FrameOnTapePrivate {
 public:
 	FrameOnTapePrivate( const QImage & img, int counter, FrameOnTape * parent )
 		:	m_counter( counter )
+		,	m_current( false )
 		,	m_frame( new Frame( img, Frame::ResizeMode::FitToHeight, parent ) )
 		,	m_label( new QLabel( parent ) )
 		,	m_checkBox( new QCheckBox( parent ) )
@@ -50,8 +51,13 @@ public:
 		m_label->setText( FrameOnTape::tr( "#%1" ).arg( m_counter ) );
 	}
 
+	//! Set current state.
+	void setCurrent( bool on );
+
 	//! Counter.
 	int m_counter;
+	//! Is current?
+	bool m_current;
 	//! Frame.
 	Frame * m_frame;
 	//! Counter label.
@@ -61,6 +67,17 @@ public:
 	//! Parent.
 	FrameOnTape * q;
 }; // class FrameOnTapePrivate
+
+void
+FrameOnTapePrivate::setCurrent( bool on )
+{
+	m_current = on;
+
+	if( m_current )
+		q->setFrameStyle( QFrame::Panel | QFrame::Sunken );
+	else
+		q->setFrameStyle( QFrame::Panel | QFrame::Raised );
+}
 
 
 //
@@ -82,12 +99,19 @@ FrameOnTape::FrameOnTape( const QImage & img, int counter, QWidget * parent )
 
 	vlayout->addLayout( hlayout );
 
-	setFrameStyle( QFrame::Box | QFrame::Raised );
+	d->setCurrent( false );
+
+	setLineWidth( 2 );
 
 	connect( d->m_checkBox, &QCheckBox::stateChanged,
 		[this] ( int state ) { emit this->checked( state != 0 ); } );
 	connect( d->m_frame, &Frame::clicked,
-		[this] () { emit this->clicked( this->d->m_counter ); } );
+		[this] ()
+		{
+			this->d->setCurrent( true );
+
+			emit this->clicked( this->d->m_counter );
+		} );
 }
 
 FrameOnTape::~FrameOnTape() noexcept
@@ -124,4 +148,16 @@ FrameOnTape::setCounter( int c )
 	d->m_counter = c;
 
 	d->m_label->setText( tr( "#%1" ).arg( c ) );
+}
+
+bool
+FrameOnTape::isCurrent() const
+{
+	return d->m_current;
+}
+
+void
+FrameOnTape::setCurrent( bool on )
+{
+	d->setCurrent( on );
 }
