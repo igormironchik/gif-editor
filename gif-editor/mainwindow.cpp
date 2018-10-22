@@ -23,12 +23,23 @@
 // GIF editor include.
 #include "mainwindow.hpp"
 #include "view.hpp"
+#include "tape.hpp"
+#include "frame.hpp"
 
 // Qt include.
 #include <QMenuBar>
 #include <QApplication>
 #include <QMessageBox>
 #include <QCloseEvent>
+#include <QFileDialog>
+#include <QMessageBox>
+
+// Magick++ include.
+#include <Magick++.h>
+#include <Magick++/Exception.h>
+
+// C++ include.
+#include <list>
 
 
 //
@@ -43,13 +54,53 @@ public:
 	{
 	}
 
+	//! Clear view.
+	void clearView();
+	//! Convert Magick::Image to QImage.
+	QImage convert( const Magick::Image & img );
+
 	//! Current file name.
 	QString m_currentGif;
+	//! Frames.
+	std::list< Magick::Image > m_frames;
 	//! View.
 	View * m_view;
 	//! Parent.
 	MainWindow * q;
 }; // class MainWindowPrivate
+
+void
+MainWindowPrivate::clearView()
+{
+	m_frames.clear();
+	m_view->tape()->clear();
+	m_view->currentFrame()->setImage( QImage() );
+}
+
+QImage
+MainWindowPrivate::convert( const Magick::Image & img )
+{
+    QImage qimg( static_cast< int > ( img.columns() ),
+		static_cast< int > ( img.rows() ), QImage::Format_RGB888 );
+    const Magick::PixelPacket * pixels;
+    Magick::ColorRGB rgb;
+
+    for( int y = 0; y < qimg.height(); ++y)
+	{
+        pixels = img.getConstPixels( 0, y, static_cast< std::size_t > ( qimg.width() ), 1 );
+
+        for( int x = 0; x < qimg.width(); ++x )
+		{
+            rgb = ( *( pixels + x ) );
+
+            qimg.setPixel( x, y, QColor( static_cast< int> ( 255 * rgb.red() ),
+				static_cast< int > ( 255 * rgb.green() ),
+				static_cast< int > ( 255 * rgb.blue() ) ).rgb());
+        }
+    }
+
+	return qimg;
+}
 
 
 //
@@ -91,7 +142,34 @@ MainWindow::closeEvent( QCloseEvent * e )
 void
 MainWindow::openGif()
 {
+	const auto fileName = QFileDialog::getOpenFileName( this,
+		tr( "Open GIF..." ), QString(), tr( "GIF (*.gif)" ) );
 
+	if( !fileName.isEmpty() )
+	{
+		d->clearView();
+
+		try {
+			std::vector< Magick::Image > frames;
+
+			Magick::readImages( &frames, fileName.toStdString() );
+
+			Magick::coalesceImages( &d->m_frames, frames.begin(), frames.end() );
+
+			std::for_each( d->m_frames.cbegin(), d->m_frames.cend(),
+				[this] ( const Magick::Image & img )
+				{
+					this->d->m_view->tape()->addFrame( this->d->convert( img ) );
+				} );
+		}
+		catch( const Magick::Exception & x )
+		{
+			d->clearView();
+
+			QMessageBox::warning( this, tr( "Failed to open GIF..." ),
+				QString::fromLocal8Bit( x.what() ) );
+		}
+	}
 }
 
 void

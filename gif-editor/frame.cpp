@@ -97,6 +97,16 @@ Frame::Frame( const QImage & img, ResizeMode mode, QWidget * parent )
 	:	QWidget( parent )
 	,	d( new FramePrivate( img, mode, this ) )
 {
+	switch( mode )
+	{
+		case ResizeMode::FitToSize :
+			setSizePolicy( QSizePolicy::Expanding, QSizePolicy::Expanding );
+		break;
+
+		case ResizeMode::FitToHeight :
+			setSizePolicy( QSizePolicy::Fixed, QSizePolicy::Expanding );
+		break;
+	}
 }
 
 Frame::~Frame() noexcept

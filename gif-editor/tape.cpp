@@ -107,6 +107,8 @@ Tape::removeFrame( int idx )
 void
 Tape::clear()
 {
-	for( int i = 1; i <= count(); ++i )
+	const int c = count();
+
+	for( int i = 1; i <= c; ++i )
 		removeFrame( 1 );
 }

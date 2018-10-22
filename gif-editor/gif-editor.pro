@@ -21,3 +21,8 @@ RESOURCES = resources.qrc
 win32 {
     RC_FILE = gif-editor.rc
 }
+
+unix|win32: LIBS += -L/usr/lib/x86_64-linux-gnu/ -lMagick++-6.Q16 -lMagickCore-6.Q16
+
+INCLUDEPATH += /usr/include/ImageMagick-6 \
+	/usr/include/x86_64-linux-gnu/ImageMagick-6
