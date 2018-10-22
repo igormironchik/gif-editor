@@ -22,6 +22,7 @@
 
 // GIF editor include.
 #include "mainwindow.hpp"
+#include "view.hpp"
 
 // Qt include.
 #include <QMenuBar>
@@ -37,12 +38,15 @@
 class MainWindowPrivate {
 public:
 	MainWindowPrivate( MainWindow * parent )
-		:	q( parent )
+		:	m_view( new View( parent ) )
+		,	q( parent )
 	{
 	}
 
 	//! Current file name.
 	QString m_currentGif;
+	//! View.
+	View * m_view;
 	//! Parent.
 	MainWindow * q;
 }; // class MainWindowPrivate
@@ -68,6 +72,8 @@ MainWindow::MainWindow()
 	file->addSeparator();
 	file->addAction( QIcon( ":/img/application-exit.png" ), tr( "Quit" ),
 		this, &MainWindow::quit, tr( "Ctrl+Q" ) );
+
+	setCentralWidget( d->m_view );
 }
 
 MainWindow::~MainWindow() noexcept

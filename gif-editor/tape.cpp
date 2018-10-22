@@ -25,7 +25,7 @@
 #include "frameontape.hpp"
 
 // Qt include.
-#include <QVector>
+#include <QList>
 #include <QHBoxLayout>
 
 
@@ -43,7 +43,7 @@ public:
 	}
 
 	//! Frames.
-	QVector< FrameOnTape* > m_frames;
+	QList< FrameOnTape* > m_frames;
 	//! Layout.
 	QHBoxLayout * m_layout;
 	//! Parent.
