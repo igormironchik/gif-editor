@@ -20,53 +20,52 @@
 	along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef GIF_EDITOR_FRAMEONTAPE_HPP_INCLUDED
-#define GIF_EDITOR_FRAMEONTAPE_HPP_INCLUDED
+#ifndef GIF_EDITOR_TAPE_HPP_INCLUDED
+#define GIF_EDITOR_TAPE_HPP_INCLUDED
 
 // Qt include.
-#include <QFrame>
+#include <QWidget>
 #include <QScopedPointer>
 
 
+class FrameOnTape;
+
+
 //
-// FrameOnTape
+// Tape
 //
 
-class FrameOnTapePrivate;
+class TapePrivate;
 
-//! Frame on tape.
-class FrameOnTape final
-	:	public QFrame
+//! Tape with frames.
+class Tape final
+	:	public QWidget
 {
 	Q_OBJECT
 
 signals:
-	//! Clicked.
+	//! Frame clicked.
 	void clicked( int idx );
-	//! Checked.
-	void checked( bool on );
 
 public:
-	FrameOnTape( const QImage & img, int counter, QWidget * parent = nullptr );
-	~FrameOnTape() noexcept override;
+	Tape( QWidget * parent = nullptr );
+	~Tape() noexcept override;
 
-	//! \return Image.
-	const QImage & image() const;
-	//! Set image.
-	void setImage( const QImage & img );
-
-	//! \return Is frame checked.
-	bool isChecked() const;
-
-	//! \return Counter.
-	int counter() const;
-	//! Set counter.
-	void setCounter( int c );
+	//! \return Count of frames.
+	int count() const;
+	//! Add frame.
+	void addFrame( const QImage & img );
+	//! \return Frame.
+	FrameOnTape * frame( int idx ) const;
+	//! Remove frame.
+	void removeFrame( int idx );
+	//! Clear.
+	void clear();
 
 private:
-	Q_DISABLE_COPY( FrameOnTape )
+	Q_DISABLE_COPY( Tape )
 
-	QScopedPointer< FrameOnTapePrivate > d;
-}; // class FrameOnTape
+	QScopedPointer< TapePrivate > d;
+}; // class Tape
 
-#endif // GIF_EDITOR_FRAMEONTAPE_HPP_INCLUDED
+#endif // GIF_EDITOR_TAPE_HPP_INCLUDED

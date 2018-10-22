@@ -5,12 +5,14 @@ QT += core gui widgets
 
 HEADERS = mainwindow.hpp \
 	frame.hpp \
-	frameontape.hpp
+	frameontape.hpp \
+	tape.hpp
 
 SOURCES = main.cpp \
     mainwindow.cpp \
 	frame.cpp \
-	frameontape.cpp
+	frameontape.cpp \
+	tape.cpp
 
 RESOURCES = resources.qrc
 

@@ -37,7 +37,7 @@
 
 class FrameOnTapePrivate {
 public:
-	FrameOnTapePrivate( const QImage & img, quint64 counter, FrameOnTape * parent )
+	FrameOnTapePrivate( const QImage & img, int counter, FrameOnTape * parent )
 		:	m_counter( counter )
 		,	m_frame( new Frame( img, Frame::ResizeMode::FitToHeight, parent ) )
 		,	m_label( new QLabel( parent ) )
@@ -51,7 +51,7 @@ public:
 	}
 
 	//! Counter.
-	quint64 m_counter;
+	int m_counter;
 	//! Frame.
 	Frame * m_frame;
 	//! Counter label.
@@ -67,7 +67,7 @@ public:
 // FrameOnTape
 //
 
-FrameOnTape::FrameOnTape( const QImage & img, quint64 counter, QWidget * parent )
+FrameOnTape::FrameOnTape( const QImage & img, int counter, QWidget * parent )
 	:	QFrame( parent )
 	,	d( new FrameOnTapePrivate( img, counter, this ) )
 {
@@ -86,7 +86,8 @@ FrameOnTape::FrameOnTape( const QImage & img, quint64 counter, QWidget * parent 
 
 	connect( d->m_checkBox, &QCheckBox::stateChanged,
 		[this] ( int state ) { emit this->checked( state != 0 ); } );
-	connect( d->m_frame, &Frame::clicked, this, &FrameOnTape::clicked );
+	connect( d->m_frame, &Frame::clicked,
+		[this] () { emit this->clicked( this->d->m_counter ); } );
 }
 
 FrameOnTape::~FrameOnTape() noexcept
@@ -111,14 +112,14 @@ FrameOnTape::isChecked() const
 	return d->m_checkBox->isChecked();
 }
 
-quint64
+int
 FrameOnTape::counter() const
 {
 	return d->m_counter;
 }
 
 void
-FrameOnTape::setCounter( quint64 c )
+FrameOnTape::setCounter( int c )
 {
 	d->m_counter = c;
 
