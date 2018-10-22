@@ -143,7 +143,7 @@ Tape::removeFrame( int idx )
 		{
 			d->m_currentFrame = nullptr;
 
-			if( idx > 0 )
+			if( idx > 1 )
 			{
 				d->m_currentFrame = d->m_frames.at( idx - 2 );
 				d->m_currentFrame->setCurrent( true );
