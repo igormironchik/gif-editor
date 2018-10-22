@@ -68,7 +68,7 @@ public:
 //
 
 FrameOnTape::FrameOnTape( const QImage & img, quint64 counter, QWidget * parent )
-	:	QWidget( parent )
+	:	QFrame( parent )
 	,	d( new FrameOnTapePrivate( img, counter, this ) )
 {
 	auto vlayout = new QVBoxLayout( this );
@@ -81,6 +81,8 @@ FrameOnTape::FrameOnTape( const QImage & img, quint64 counter, QWidget * parent 
 	hlayout->addWidget( d->m_label );
 
 	vlayout->addLayout( hlayout );
+
+	setFrameStyle( QFrame::Box | QFrame::Raised );
 
 	connect( d->m_checkBox, &QCheckBox::stateChanged,
 		[this] ( int state ) { emit this->checked( state != 0 ); } );

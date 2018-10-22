@@ -24,7 +24,7 @@
 #define GIF_EDITOR_FRAMEONTAPE_HPP_INCLUDED
 
 // Qt include.
-#include <QWidget>
+#include <QFrame>
 #include <QScopedPointer>
 
 
@@ -36,7 +36,7 @@ class FrameOnTapePrivate;
 
 //! Frame on tape.
 class FrameOnTape final
-	:	public QWidget
+	:	public QFrame
 {
 	Q_OBJECT
 
