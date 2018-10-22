@@ -20,8 +20,8 @@
 	along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef GIF_EDITOR_FRAME_HPP_INCLUDED
-#define GIF_EDITOR_FRAME_HPP_INCLUDED
+#ifndef GIF_EDITOR_FRAMEONTAPE_HPP_INCLUDED
+#define GIF_EDITOR_FRAMEONTAPE_HPP_INCLUDED
 
 // Qt include.
 #include <QWidget>
@@ -29,13 +29,13 @@
 
 
 //
-// Frame
+// FrameOnTape
 //
 
-class FramePrivate;
+class FrameOnTapePrivate;
 
-//! This is just an image with frame that fit the given size or height.
-class Frame final
+//! Frame on tape.
+class FrameOnTape final
 	:	public QWidget
 {
 	Q_OBJECT
@@ -43,35 +43,30 @@ class Frame final
 signals:
 	//! Clicked.
 	void clicked();
+	//! Checked.
+	void checked( bool on );
 
 public:
-	//! Resize mode.
-	enum class ResizeMode {
-		//! Fit to size.
-		FitToSize,
-		//! Fit to height.
-		FitToHeight
-	}; // enum class ResizeMode
-
-	Frame( const QImage & img, ResizeMode mode, QWidget * parent = nullptr );
-	~Frame() noexcept override;
+	FrameOnTape( const QImage & img, quint64 counter, QWidget * parent = nullptr );
+	~FrameOnTape() noexcept override;
 
 	//! \return Image.
 	const QImage & image() const;
 	//! Set image.
 	void setImage( const QImage & img );
 
-	QSize sizeHint() const override;
+	//! \return Is frame checked.
+	bool isChecked() const;
 
-protected:
-	void paintEvent( QPaintEvent * ) override;
-	void resizeEvent( QResizeEvent * e ) override;
-	void mouseReleaseEvent( QMouseEvent * e ) override;
+	//! \return Counter.
+	quint64 counter() const;
+	//! Set counter.
+	void setCounter( quint64 c );
 
 private:
-	Q_DISABLE_COPY( Frame )
+	Q_DISABLE_COPY( FrameOnTape )
 
-	QScopedPointer< FramePrivate > d;
-}; // class Frame
+	QScopedPointer< FrameOnTapePrivate > d;
+}; // class FrameOnTape
 
-#endif // GIF_EDITOR_FRAME_HPP_INCLUDED
+#endif // GIF_EDITOR_FRAMEONTAPE_HPP_INCLUDED

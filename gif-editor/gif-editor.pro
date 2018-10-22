@@ -4,11 +4,13 @@ TARGET = GIFEditor.App
 QT += core gui widgets
 
 HEADERS = mainwindow.hpp \
-	frame.hpp
+	frame.hpp \
+	frameontape.hpp
 
 SOURCES = main.cpp \
     mainwindow.cpp \
-	frame.cpp
+	frame.cpp \
+	frameontape.cpp
 
 RESOURCES = resources.qrc
 

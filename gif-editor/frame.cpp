@@ -26,6 +26,7 @@
 // Qt include.
 #include <QPainter>
 #include <QResizeEvent>
+#include <QMouseEvent>
 
 
 //
@@ -142,4 +143,17 @@ Frame::resizeEvent( QResizeEvent * e )
 			d->resized();
 
 	e->accept();
+}
+
+void
+Frame::mouseReleaseEvent( QMouseEvent * e )
+{
+	if( e->button() == Qt::LeftButton )
+	{
+		emit clicked();
+
+		e->accept();
+	}
+	else
+		e->ignore();
 }
