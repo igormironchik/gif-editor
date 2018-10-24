@@ -102,7 +102,7 @@ Tape::addFrame( const QImage & img )
 FrameOnTape *
 Tape::frame( int idx ) const
 {
-	if( idx <= count() )
+	if( idx >= 1 && idx <= count() )
 		return d->m_frames.at( idx - 1 );
 	else
 		return nullptr;
