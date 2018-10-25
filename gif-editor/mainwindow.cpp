@@ -169,6 +169,8 @@ MainWindow::openGif()
 
 		setWindowTitle( tr( "GIF Editor" ) );
 
+		d->m_view->currentFrame()->setImage( QImage() );
+
 		try {
 			std::vector< Magick::Image > frames;
 
