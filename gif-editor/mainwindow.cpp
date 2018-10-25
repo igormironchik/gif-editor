@@ -165,14 +165,16 @@ MainWindow::openGif()
 
 		d->clearView();
 
+		setWindowModified( false );
+
+		setWindowTitle( tr( "GIF Editor" ) );
+
 		try {
 			std::vector< Magick::Image > frames;
 
 			Magick::readImages( &frames, fileName.toStdString() );
 
 			Magick::coalesceImages( &d->m_frames, frames.begin(), frames.end() );
-
-			setWindowModified( false );
 
 			QFileInfo info( fileName );
 
