@@ -165,18 +165,20 @@ MainWindow::openGif()
 
 		d->clearView();
 
-		setWindowModified( false );
-
-		QFileInfo info( fileName );
-
-		setWindowTitle( tr( "GIF Editor - %1[*]" ).arg( info.fileName() ) );
-
 		try {
 			std::vector< Magick::Image > frames;
 
 			Magick::readImages( &frames, fileName.toStdString() );
 
 			Magick::coalesceImages( &d->m_frames, frames.begin(), frames.end() );
+
+			setWindowModified( false );
+
+			QFileInfo info( fileName );
+
+			setWindowTitle( tr( "GIF Editor - %1[*]" ).arg( info.fileName() ) );
+
+			d->m_currentGif = fileName;
 
 			std::for_each( d->m_frames.cbegin(), d->m_frames.cend(),
 				[this] ( const Magick::Image & img )
@@ -208,19 +210,27 @@ MainWindow::saveGif()
 			toSave.push_back( d->m_frames.at( static_cast< std::size_t > ( i ) ) );
 	}
 
-	try {
-		Magick::writeImages( toSave.begin(), toSave.end(), d->m_currentGif.toStdString() );
-
-		d->m_view->tape()->removeUnchecked();
-
-		d->m_frames = toSave;
-
-		setWindowModified( false );
-	}
-	catch( const Magick::Exception & x )
+	if( !toSave.empty() )
 	{
-		QMessageBox::warning( this, tr( "Failed to save GIF..." ),
-			QString::fromLocal8Bit( x.what() ) );
+		try {
+			Magick::writeImages( toSave.begin(), toSave.end(), d->m_currentGif.toStdString() );
+
+			d->m_view->tape()->removeUnchecked();
+
+			d->m_frames = toSave;
+
+			setWindowModified( false );
+		}
+		catch( const Magick::Exception & x )
+		{
+			QMessageBox::warning( this, tr( "Failed to save GIF..." ),
+				QString::fromLocal8Bit( x.what() ) );
+		}
+	}
+	else
+	{
+		QMessageBox::information( this, tr( "Can't save GIF..." ),
+			tr( "Can't save GIF image with no frames." ) );
 	}
 }
 

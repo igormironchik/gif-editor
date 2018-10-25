@@ -100,5 +100,8 @@ View::currentFrame() const
 void
 View::frameSelected( int idx )
 {
-	d->m_currentFrame->setImage( d->m_tape->frame( idx )->image() );
+	if( idx >= 1 && idx <= d->m_tape->count() )
+		d->m_currentFrame->setImage( d->m_tape->frame( idx )->image() );
+	else
+		d->m_currentFrame->setImage( QImage() );
 }

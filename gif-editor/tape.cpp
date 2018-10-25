@@ -161,7 +161,11 @@ Tape::removeFrame( int idx )
 				emit currentFrameChanged( idx + 1 );
 			}
 			else
+			{
 				d->m_currentFrame = nullptr;
+
+				emit currentFrameChanged( 0 );
+			}
 		}
 
 		d->m_frames.removeAt( idx - 1 );
