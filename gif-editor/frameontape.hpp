@@ -44,7 +44,7 @@ signals:
 	//! Clicked.
 	void clicked( int idx );
 	//! Checked.
-	void checked( bool on );
+	void checked( int idx, bool on );
 
 public:
 	FrameOnTape( const QImage & img, int counter, QWidget * parent = nullptr );

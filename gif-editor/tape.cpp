@@ -96,6 +96,9 @@ Tape::addFrame( const QImage & img )
 			emit this->clicked( idx );
 		} );
 
+	connect( d->m_frames.back(), &FrameOnTape::checked,
+		this, &Tape::checkStateChanged );
+
 	adjustSize();
 }
 
@@ -174,4 +177,23 @@ Tape::clear()
 
 	for( int i = 1; i <= c; ++i )
 		removeFrame( 1 );
+}
+
+void
+Tape::removeUnchecked()
+{
+	const int c = count();
+	int removed = 0;
+
+	for( int i = 1; i <= c; ++i )
+	{
+		if( !frame( i - removed )->isChecked() )
+		{
+			removeFrame( i - removed );
+
+			++removed;
+		}
+		else
+			frame( i - removed )->setCounter( i - removed );
+	}
 }

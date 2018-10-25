@@ -25,6 +25,7 @@
 #include "view.hpp"
 #include "tape.hpp"
 #include "frame.hpp"
+#include "frameontape.hpp"
 
 // Qt include.
 #include <QMenuBar>
@@ -33,13 +34,14 @@
 #include <QCloseEvent>
 #include <QFileDialog>
 #include <QMessageBox>
+#include <QFileInfo>
 
 // Magick++ include.
 #include <Magick++.h>
 #include <Magick++/Exception.h>
 
 // C++ include.
-#include <list>
+#include <vector>
 
 
 //
@@ -62,7 +64,7 @@ public:
 	//! Current file name.
 	QString m_currentGif;
 	//! Frames.
-	std::list< Magick::Image > m_frames;
+	std::vector< Magick::Image > m_frames;
 	//! View.
 	View * m_view;
 	//! Parent.
@@ -125,6 +127,9 @@ MainWindow::MainWindow()
 		this, &MainWindow::quit, tr( "Ctrl+Q" ) );
 
 	setCentralWidget( d->m_view );
+
+	connect( d->m_view->tape(), &Tape::checkStateChanged,
+		this, &MainWindow::frameChecked );
 }
 
 MainWindow::~MainWindow() noexcept
@@ -147,7 +152,24 @@ MainWindow::openGif()
 
 	if( !fileName.isEmpty() )
 	{
+		if( isWindowModified() )
+		{
+			const auto btn = QMessageBox::question( this,
+				tr( "GIF was changed..." ),
+				tr( "\"%1\" was changed.\n"
+					"Do you want to save it?" ) );
+
+			if( btn == QMessageBox::Yes )
+				saveGif();
+		}
+
 		d->clearView();
+
+		setWindowModified( false );
+
+		QFileInfo info( fileName );
+
+		setWindowTitle( tr( "GIF Editor - %1[*]" ).arg( info.fileName() ) );
 
 		try {
 			std::vector< Magick::Image > frames;
@@ -178,13 +200,49 @@ MainWindow::openGif()
 void
 MainWindow::saveGif()
 {
+	std::vector< Magick::Image > toSave;
 
+	for( int i = 0; i < d->m_view->tape()->count(); ++i )
+	{
+		if( d->m_view->tape()->frame( i + 1 )->isChecked() )
+			toSave.push_back( d->m_frames.at( static_cast< std::size_t > ( i ) ) );
+	}
+
+	try {
+		Magick::writeImages( toSave.begin(), toSave.end(), d->m_currentGif.toStdString() );
+
+		d->m_view->tape()->removeUnchecked();
+
+		d->m_frames = toSave;
+
+		setWindowModified( false );
+	}
+	catch( const Magick::Exception & x )
+	{
+		QMessageBox::warning( this, tr( "Failed to save GIF..." ),
+			QString::fromLocal8Bit( x.what() ) );
+	}
 }
 
 void
 MainWindow::saveGifAs()
 {
+	auto fileName = QFileDialog::getSaveFileName( this,
+		tr( "Choose file to save to..." ), QString(), tr( "GIF (*.gif)" ) );
 
+	if( !fileName.isEmpty() )
+	{
+		if( !fileName.endsWith( QLatin1String( ".gif" ), Qt::CaseInsensitive ) )
+			fileName.append( QLatin1String( ".gif" ) );
+
+		d->m_currentGif = fileName;
+
+		QFileInfo info( fileName );
+
+		setWindowTitle( tr( "GIF Editor - %1[*]" ).arg( info.fileName() ) );
+
+		saveGif();
+	}
 }
 
 void
@@ -200,4 +258,10 @@ MainWindow::quit()
 	}
 
 	QApplication::quit();
+}
+
+void
+MainWindow::frameChecked( int, bool )
+{
+	setWindowModified( true );
 }

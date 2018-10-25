@@ -48,6 +48,8 @@ signals:
 	void clicked( int idx );
 	//! Current frame changed.
 	void currentFrameChanged( int idx );
+	//! Frame checked/unchecked.
+	void checkStateChanged( int idx, bool checked );
 
 public:
 	Tape( QWidget * parent = nullptr );
@@ -67,6 +69,8 @@ public:
 	void removeFrame( int idx );
 	//! Clear.
 	void clear();
+	//! Remove unchecked frames.
+	void removeUnchecked();
 
 private:
 	Q_DISABLE_COPY( Tape )

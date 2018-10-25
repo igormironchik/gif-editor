@@ -56,6 +56,8 @@ private slots:
 	void saveGifAs();
 	//! Quit.
 	void quit();
+	//! Frame checked/unchecked.
+	void frameChecked( int idx, bool on );
 
 private:
 	Q_DISABLE_COPY( MainWindow )
