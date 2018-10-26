@@ -20,62 +20,59 @@
 	along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef GIF_EDITOR_FRAME_HPP_INCLUDED
-#define GIF_EDITOR_FRAME_HPP_INCLUDED
+#ifndef GIF_EDITOR_CROP_HPP_INCLUDED
+#define GIF_EDITOR_CROP_HPP_INCLUDED
 
 // Qt include.
 #include <QWidget>
 #include <QScopedPointer>
 
+class Frame;
+
 
 //
-// Frame
+// CropFrame
 //
 
-class FramePrivate;
+class CropFramePrivate;
 
-//! This is just an image with frame that fit the given size or height.
-class Frame final
+//! Crop frame.
+class CropFrame final
 	:	public QWidget
 {
 	Q_OBJECT
 
-signals:
-	//! Clicked.
-	void clicked();
-	//! Resized.
-	void resized();
-
 public:
-	//! Resize mode.
-	enum class ResizeMode {
-		//! Fit to size.
-		FitToSize,
-		//! Fit to height.
-		FitToHeight
-	}; // enum class ResizeMode
+	CropFrame( Frame * parent = nullptr );
+	~CropFrame() noexcept override;
 
-	Frame( const QImage & img, ResizeMode mode, QWidget * parent = nullptr );
-	~Frame() noexcept override;
+	//! Set available rectangle.
+	void setAvailableRect( const QRect & r );
+	//! \return Selected rectangle.
+	const QRect & selectedRect() const;
 
-	//! \return Image.
-	const QImage & image() const;
-	//! Set image.
-	void setImage( const QImage & img );
-	//! \return Thumbnail image rect.
-	QRect imageRect() const;
+public slots:
+	//! Start.
+	void start();
+	//! Stop.
+	void stop();
 
-	QSize sizeHint() const override;
+private slots:
+	//! Frame resized.
+	void frameResized();
 
 protected:
 	void paintEvent( QPaintEvent * ) override;
-	void resizeEvent( QResizeEvent * e ) override;
+	void mousePressEvent( QMouseEvent * e ) override;
+	void mouseMoveEvent( QMouseEvent * e ) override;
 	void mouseReleaseEvent( QMouseEvent * e ) override;
+	void enterEvent( QEvent * e ) override;
+	void leaveEvent( QEvent * e ) override;
 
 private:
-	Q_DISABLE_COPY( Frame )
+	Q_DISABLE_COPY( CropFrame )
 
-	QScopedPointer< FramePrivate > d;
-}; // class Frame
+	QScopedPointer< CropFramePrivate > d;
+}; // class CropFrame
 
-#endif // GIF_EDITOR_FRAME_HPP_INCLUDED
+#endif // GIF_EDITOR_CROP_HPP_INCLUDED

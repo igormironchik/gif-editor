@@ -11,5 +11,6 @@
         <file>img/document-open.png</file>
         <file>img/document-save-as.png</file>
         <file>img/document-save.png</file>
+        <file>img/transform-crop.png</file>
     </qresource>
 </RCC>

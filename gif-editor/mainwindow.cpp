@@ -35,6 +35,9 @@
 #include <QFileDialog>
 #include <QMessageBox>
 #include <QFileInfo>
+#include <QAction>
+#include <QActionGroup>
+#include <QToolBar>
 
 // Magick++ include.
 #include <Magick++.h>
@@ -52,6 +55,7 @@ class MainWindowPrivate {
 public:
 	MainWindowPrivate( MainWindow * parent )
 		:	m_view( new View( parent ) )
+		,	m_crop( nullptr )
 		,	q( parent )
 	{
 	}
@@ -67,6 +71,8 @@ public:
 	std::vector< Magick::Image > m_frames;
 	//! View.
 	View * m_view;
+	//! Crop action.
+	QAction * m_crop;
 	//! Parent.
 	MainWindow * q;
 }; // class MainWindowPrivate
@@ -125,6 +131,24 @@ MainWindow::MainWindow()
 	file->addSeparator();
 	file->addAction( QIcon( ":/img/application-exit.png" ), tr( "Quit" ),
 		this, &MainWindow::quit, tr( "Ctrl+Q" ) );
+
+	d->m_crop = new QAction( QIcon( ":/img/transform-crop.png" ),
+		tr( "Crop" ), this );
+	d->m_crop->setShortcut( tr( "Ctrl+C" ) );
+	d->m_crop->setShortcutContext( Qt::ApplicationShortcut );
+	d->m_crop->setCheckable( true );
+	d->m_crop->setChecked( false );
+	d->m_crop->setEnabled( false );
+
+	connect( d->m_crop, &QAction::triggered, this, &MainWindow::crop );
+
+	auto edit = menuBar()->addMenu( tr( "&Edit" ) );
+	edit->addAction( d->m_crop );
+
+	auto editToolBar = new QToolBar( tr( "Edit" ), this );
+	editToolBar->addAction( d->m_crop );
+
+	addToolBar( Qt::LeftToolBarArea, editToolBar );
 
 	setCentralWidget( d->m_view );
 
@@ -192,6 +216,8 @@ MainWindow::openGif()
 
 			if( !d->m_frames.empty() )
 				d->m_view->tape()->setCurrentFrame( 1 );
+
+			d->m_crop->setEnabled( true );
 		}
 		catch( const Magick::Exception & x )
 		{
@@ -278,4 +304,13 @@ void
 MainWindow::frameChecked( int, bool )
 {
 	setWindowModified( true );
+}
+
+void
+MainWindow::crop( bool on )
+{
+	if( on )
+		d->m_view->startCrop();
+	else
+		d->m_view->stopCrop();
 }

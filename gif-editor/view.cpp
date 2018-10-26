@@ -25,6 +25,7 @@
 #include "tape.hpp"
 #include "frame.hpp"
 #include "frameontape.hpp"
+#include "crop.hpp"
 
 // Qt include.
 #include <QVBoxLayout>
@@ -40,6 +41,7 @@ public:
 	ViewPrivate( View * parent )
 		:	m_tape( nullptr )
 		,	m_currentFrame( new Frame( QImage(), Frame::ResizeMode::FitToSize, parent ) )
+		,	m_crop( nullptr )
 		,	q( parent )
 	{
 	}
@@ -48,6 +50,8 @@ public:
 	Tape * m_tape;
 	//! Current frame.
 	Frame * m_currentFrame;
+	//! Crop.
+	CropFrame * m_crop;
 	//! Parent.
 	View * q;
 }; // class ViewPrivate
@@ -95,6 +99,41 @@ Frame *
 View::currentFrame() const
 {
 	return d->m_currentFrame;
+}
+
+QRect
+View::cropRect() const
+{
+	if( d->m_crop )
+		return d->m_crop->selectedRect();
+	else
+		return QRect();
+}
+
+void
+View::startCrop()
+{
+	if( !d->m_crop )
+	{
+		d->m_crop = new CropFrame( d->m_currentFrame );
+		d->m_crop->setAvailableRect( d->m_currentFrame->imageRect() );
+		d->m_crop->setGeometry( QRect( 0, 0,
+			d->m_currentFrame->width(), d->m_currentFrame->height() ) );
+		d->m_crop->show();
+		d->m_crop->raise();
+		d->m_crop->start();
+	}
+}
+
+void
+View::stopCrop()
+{
+	if( d->m_crop )
+	{
+		d->m_crop->stop();
+		d->m_crop->deleteLater();
+		d->m_crop = nullptr;
+	}
 }
 
 void

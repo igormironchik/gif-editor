@@ -129,6 +129,18 @@ Frame::setImage( const QImage & img )
 	d->resized();
 }
 
+QRect
+Frame::imageRect() const
+{
+	const int x = ( width() - d->m_thumbnail.width() ) / 2;
+	const int y = ( height() - d->m_thumbnail.height() ) / 2;
+
+	QRect r = d->m_thumbnail.rect();
+	r.moveTopLeft( QPoint( x, y ) );
+
+	return r;
+}
+
 QSize
 Frame::sizeHint() const
 {
@@ -138,13 +150,8 @@ Frame::sizeHint() const
 void
 Frame::paintEvent( QPaintEvent * )
 {
-	const int x = ( width() - d->m_thumbnail.width() ) / 2;
-	const int y = ( height() - d->m_thumbnail.height() ) / 2;
-
 	QPainter p( this );
-	QRect r = d->m_thumbnail.rect();
-	r.moveTopLeft( QPoint( x, y ) );
-	p.drawImage( r, d->m_thumbnail, d->m_thumbnail.rect() );
+	p.drawImage( imageRect(), d->m_thumbnail, d->m_thumbnail.rect() );
 }
 
 void
@@ -155,6 +162,8 @@ Frame::resizeEvent( QResizeEvent * e )
 			d->resized();
 
 	e->accept();
+
+	emit resized();
 }
 
 void

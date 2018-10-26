@@ -53,6 +53,15 @@ public:
 	//! \return Current frame.
 	Frame * currentFrame() const;
 
+	//! \return Crop rectangle.
+	QRect cropRect() const;
+
+public slots:
+	//! Start crop.
+	void startCrop();
+	//! Stop crop.
+	void stopCrop();
+
 private slots:
 	//! Frame selected.
 	void frameSelected( int idx );

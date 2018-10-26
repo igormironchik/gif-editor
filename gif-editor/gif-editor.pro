@@ -7,14 +7,16 @@ HEADERS = mainwindow.hpp \
 	frame.hpp \
 	frameontape.hpp \
 	tape.hpp \
-	view.hpp
+	view.hpp \
+	crop.hpp
 
 SOURCES = main.cpp \
     mainwindow.cpp \
 	frame.cpp \
 	frameontape.cpp \
 	tape.cpp \
-	view.cpp
+	view.cpp \
+	crop.cpp
 
 RESOURCES = resources.qrc
 

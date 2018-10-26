@@ -58,6 +58,8 @@ private slots:
 	void quit();
 	//! Frame checked/unchecked.
 	void frameChecked( int idx, bool on );
+	//! Crop.
+	void crop( bool on );
 
 private:
 	Q_DISABLE_COPY( MainWindow )
