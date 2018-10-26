@@ -56,6 +56,9 @@ public:
 	MainWindowPrivate( MainWindow * parent )
 		:	m_view( new View( parent ) )
 		,	m_crop( nullptr )
+		,	m_save( nullptr )
+		,	m_saveAs( nullptr )
+		,	m_open( nullptr )
 		,	q( parent )
 	{
 	}
@@ -64,6 +67,13 @@ public:
 	void clearView();
 	//! Convert Magick::Image to QImage.
 	QImage convert( const Magick::Image & img );
+	//! Enable file actions.
+	void enableFileActions( bool on = true )
+	{
+		m_save->setEnabled( on );
+		m_saveAs->setEnabled( on );
+		m_open->setEnabled( on );
+	}
 
 	//! Current file name.
 	QString m_currentGif;
@@ -73,6 +83,12 @@ public:
 	View * m_view;
 	//! Crop action.
 	QAction * m_crop;
+	//! Save action.
+	QAction * m_save;
+	//! Save as action.
+	QAction * m_saveAs;
+	//! Open action.
+	QAction * m_open;
 	//! Parent.
 	MainWindow * q;
 }; // class MainWindowPrivate
@@ -121,12 +137,12 @@ MainWindow::MainWindow()
 	setWindowTitle( tr( "GIF Editor" ) );
 
 	auto file = menuBar()->addMenu( tr( "&File" ) );
-	file->addAction( QIcon( ":/img/document-open.png" ), tr( "Open" ),
+	d->m_open = file->addAction( QIcon( ":/img/document-open.png" ), tr( "Open" ),
 		this, &MainWindow::openGif, tr( "Ctrl+O" ) );
 	file->addSeparator();
-	file->addAction( QIcon( ":/img/document-save.png" ), tr( "Save" ),
+	d->m_save = file->addAction( QIcon( ":/img/document-save.png" ), tr( "Save" ),
 		this, &MainWindow::saveGif, tr( "Ctrl+S" ) );
-	file->addAction( QIcon( ":/img/document-save-as.png" ), tr( "Save As" ),
+	d->m_saveAs = file->addAction( QIcon( ":/img/document-save-as.png" ), tr( "Save As" ),
 		this, &MainWindow::saveGifAs );
 	file->addSeparator();
 	file->addAction( QIcon( ":/img/application-exit.png" ), tr( "Quit" ),
@@ -310,7 +326,15 @@ void
 MainWindow::crop( bool on )
 {
 	if( on )
+	{
+		d->enableFileActions( false );
+
 		d->m_view->startCrop();
+	}
 	else
+	{
 		d->m_view->stopCrop();
+
+		d->enableFileActions();
+	}
 }
