@@ -75,6 +75,8 @@ public:
 	void overrideCursor( const QPoint & pos );
 	//! Resize crop.
 	void resize( const QPoint & pos ) ;
+	//! \return Cropped rect.
+	QRect cropped( const QRect & full ) const;
 	//! \return Is handles should be outside selected rect.
 	bool isHandleOutside() const
 	{
@@ -395,6 +397,36 @@ CropFramePrivate::resize( const QPoint & pos )
 	m_mousePos = pos;
 }
 
+QRect
+CropFramePrivate::cropped( const QRect & full ) const
+{
+	const auto oldR = m_available;
+
+	const qreal xRatio = static_cast< qreal > ( full.width() ) /
+		static_cast< qreal > ( oldR.width() );
+	const qreal yRatio = static_cast< qreal > ( full.height() ) /
+		static_cast< qreal > ( oldR.height() );
+
+	QRect r;
+
+	if( !m_nothing )
+	{
+		const auto x = static_cast< int >( ( m_selected.x() - oldR.x() ) * xRatio ) +
+			full.x();
+		const auto y = static_cast< int >( ( m_selected.y() - oldR.y() ) * yRatio ) +
+			full.y();
+		const auto dx = full.bottomRight().x() - static_cast< int >(
+			( oldR.bottomRight().x() - m_selected.bottomRight().x() ) * xRatio );
+		const auto dy = full.bottomRight().y() - static_cast< int >(
+			( oldR.bottomRight().y() - m_selected.bottomRight().y() ) * yRatio );
+
+		r.setTopLeft( QPoint( x, y ) );
+		r.setBottomRight( QPoint( dx, dy ) );
+	}
+
+	return r;
+}
+
 
 //
 // CropFrame
@@ -408,6 +440,8 @@ CropFrame::CropFrame( Frame * parent )
 	setAttribute( Qt::WA_TranslucentBackground, true );
 	setMouseTracking( true );
 
+	d->m_available = parent->imageRect();
+
 	connect( d->m_frame, &Frame::resized,
 		this, &CropFrame::frameResized );
 }
@@ -418,16 +452,10 @@ CropFrame::~CropFrame() noexcept
 		QApplication::restoreOverrideCursor();
 }
 
-void
-CropFrame::setAvailableRect( const QRect & r )
+QRect
+CropFrame::cropRect() const
 {
-	d->m_available = r;
-}
-
-const QRect &
-CropFrame::selectedRect() const
-{
-	return d->m_selected;
+	return d->cropped( d->m_frame->image().rect() );
 }
 
 void
@@ -450,35 +478,13 @@ CropFrame::stop()
 void
 CropFrame::frameResized()
 {
-	const auto oldR = d->m_available;
+	d->m_selected = d->cropped( d->m_frame->imageRect() );
 
 	setGeometry( QRect( 0, 0, d->m_frame->width(), d->m_frame->height() ) );
 
 	d->m_available = d->m_frame->imageRect();
 
-	const auto newR = d->m_available;
-
-	const qreal xRatio = static_cast< qreal > ( newR.width() ) /
-		static_cast< qreal > ( oldR.width() );
-	const qreal yRatio = static_cast< qreal > ( newR.height() ) /
-		static_cast< qreal > ( oldR.height() );
-
-	if( !d->m_nothing )
-	{
-		const auto x = static_cast< int >( ( d->m_selected.x() - oldR.x() ) * xRatio ) +
-			newR.x();
-		const auto y = static_cast< int >( ( d->m_selected.y() - oldR.y() ) * yRatio ) +
-			newR.y();
-		const auto dx = newR.bottomRight().x() - static_cast< int >(
-			( oldR.bottomRight().x() - d->m_selected.bottomRight().x() ) * xRatio );
-		const auto dy = newR.bottomRight().y() - static_cast< int >(
-			( oldR.bottomRight().y() - d->m_selected.bottomRight().y() ) * yRatio );
-
-		d->m_selected.setTopLeft( QPoint( x, y ) );
-		d->m_selected.setBottomRight( QPoint( dx, dy ) );
-
-		update();
-	}
+	update();
 }
 
 void

@@ -46,10 +46,8 @@ public:
 	CropFrame( Frame * parent = nullptr );
 	~CropFrame() noexcept override;
 
-	//! Set available rectangle.
-	void setAvailableRect( const QRect & r );
-	//! \return Selected rectangle.
-	const QRect & selectedRect() const;
+	//! \return Crop rectangle.
+	QRect cropRect() const;
 
 public slots:
 	//! Start.

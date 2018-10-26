@@ -105,7 +105,7 @@ QRect
 View::cropRect() const
 {
 	if( d->m_crop )
-		return d->m_crop->selectedRect();
+		return d->m_crop->cropRect();
 	else
 		return QRect();
 }
@@ -116,7 +116,6 @@ View::startCrop()
 	if( !d->m_crop )
 	{
 		d->m_crop = new CropFrame( d->m_currentFrame );
-		d->m_crop->setAvailableRect( d->m_currentFrame->imageRect() );
 		d->m_crop->setGeometry( QRect( 0, 0,
 			d->m_currentFrame->width(), d->m_currentFrame->height() ) );
 		d->m_crop->show();
