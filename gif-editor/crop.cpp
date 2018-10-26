@@ -71,6 +71,10 @@ public:
 	QPoint boundLeftTopToAvailable( const QPoint & p ) const;
 	//! Check and override cursor if necessary.
 	void checkAndOverrideCursor( Qt::CursorShape shape );
+	//! Override cursor.
+	void overrideCurspr( const QPoint & pos );
+	//! Resize crop.
+	void resize( const QPoint & pos ) ;
 	//! \return Is handles should be outside selected rect.
 	bool isHandleOutside() const
 	{
@@ -213,6 +217,79 @@ CropFramePrivate::checkAndOverrideCursor( Qt::CursorShape shape )
 
 		QApplication::setOverrideCursor( QCursor( shape ) );
 	}
+}
+
+void
+CropFramePrivate::overrideCurspr( const QPoint & pos )
+{
+	if( topLeftHandleRect().contains( pos ) )
+	{
+		m_handle = CropFramePrivate::Handle::TopLeft;
+		checkAndOverrideCursor( Qt::SizeFDiagCursor );
+	}
+	else if( bottomRightHandleRect().contains( pos ) )
+	{
+		m_handle = CropFramePrivate::Handle::BottomRight;
+		checkAndOverrideCursor( Qt::SizeFDiagCursor );
+	}
+	else if( topRightHandleRect().contains( pos ) )
+	{
+		m_handle = CropFramePrivate::Handle::TopRight;
+		checkAndOverrideCursor( Qt::SizeBDiagCursor );
+	}
+	else if( bottomLeftHandleRect().contains( pos ) )
+	{
+		m_handle = CropFramePrivate::Handle::BottomLeft;
+		checkAndOverrideCursor( Qt::SizeBDiagCursor );
+	}
+	else if( m_selected.contains( pos ) )
+	{
+		m_handle = CropFramePrivate::Handle::Unknown;
+		checkAndOverrideCursor( Qt::SizeAllCursor );
+	}
+	else if( m_cursorOverriden )
+	{
+		m_cursorOverriden = false;
+		m_handle = CropFramePrivate::Handle::Unknown;
+		QApplication::restoreOverrideCursor();
+	}
+}
+
+void
+CropFramePrivate::resize( const QPoint & pos )
+{
+	switch( m_handle )
+	{
+		case CropFramePrivate::Handle::Unknown :
+			m_selected.moveTo( boundLeftTopToAvailable(
+				m_selected.topLeft() - m_mousePos + pos ) );
+		break;
+
+		case CropFramePrivate::Handle::TopLeft :
+			m_selected.setTopLeft( boundToAvailable( m_selected.topLeft() -
+				m_mousePos + pos ) );
+		break;
+
+		case CropFramePrivate::Handle::TopRight :
+			m_selected.setTopRight( boundToAvailable( m_selected.topRight() -
+				m_mousePos + pos ) );
+		break;
+
+		case CropFramePrivate::Handle::BottomRight :
+			m_selected.setBottomRight( boundToAvailable( m_selected.bottomRight() -
+				m_mousePos + pos ) );
+		break;
+
+		case CropFramePrivate::Handle::BottomLeft :
+			m_selected.setBottomLeft( boundToAvailable( m_selected.bottomLeft() -
+				m_mousePos + pos ) );
+		break;
+
+		default :
+			break;
+	}
+
+	m_mousePos = pos;
 }
 
 
@@ -396,40 +473,7 @@ CropFrame::mouseMoveEvent( QMouseEvent * e )
 			d->m_nothing = false;
 		}
 		else
-		{
-			switch( d->m_handle )
-			{
-				case CropFramePrivate::Handle::Unknown :
-					d->m_selected.moveTo( d->boundLeftTopToAvailable(
-						d->m_selected.topLeft() - d->m_mousePos + e->pos() ) );
-				break;
-
-				case CropFramePrivate::Handle::TopLeft :
-					d->m_selected.setTopLeft( d->boundToAvailable( d->m_selected.topLeft() -
-						d->m_mousePos + e->pos() ) );
-				break;
-
-				case CropFramePrivate::Handle::TopRight :
-					d->m_selected.setTopRight( d->boundToAvailable( d->m_selected.topRight() -
-						d->m_mousePos + e->pos() ) );
-				break;
-
-				case CropFramePrivate::Handle::BottomRight :
-					d->m_selected.setBottomRight( d->boundToAvailable( d->m_selected.bottomRight() -
-						d->m_mousePos + e->pos() ) );
-				break;
-
-				case CropFramePrivate::Handle::BottomLeft :
-					d->m_selected.setBottomLeft( d->boundToAvailable( d->m_selected.bottomLeft() -
-						d->m_mousePos + e->pos() ) );
-				break;
-
-				default :
-					break;
-			}
-
-			d->m_mousePos = e->pos();
-		}
+			d->resize( e->pos() );
 
 		update();
 
@@ -443,39 +487,7 @@ CropFrame::mouseMoveEvent( QMouseEvent * e )
 	}
 	else if( d->m_hovered && !d->m_nothing )
 	{
-		const auto contains = d->m_selected.contains( e->pos() );
-
-		if( d->topLeftHandleRect().contains( e->pos() ) )
-		{
-			d->m_handle = CropFramePrivate::Handle::TopLeft;
-			d->checkAndOverrideCursor( Qt::SizeFDiagCursor );
-		}
-		else if( d->bottomRightHandleRect().contains( e->pos() ) )
-		{
-			d->m_handle = CropFramePrivate::Handle::BottomRight;
-			d->checkAndOverrideCursor( Qt::SizeFDiagCursor );
-		}
-		else if( d->topRightHandleRect().contains( e->pos() ) )
-		{
-			d->m_handle = CropFramePrivate::Handle::TopRight;
-			d->checkAndOverrideCursor( Qt::SizeBDiagCursor );
-		}
-		else if( d->bottomLeftHandleRect().contains( e->pos() ) )
-		{
-			d->m_handle = CropFramePrivate::Handle::BottomLeft;
-			d->checkAndOverrideCursor( Qt::SizeBDiagCursor );
-		}
-		else if( contains )
-		{
-			d->m_handle = CropFramePrivate::Handle::Unknown;
-			d->checkAndOverrideCursor( Qt::SizeAllCursor );
-		}
-		else if( d->m_cursorOverriden )
-		{
-			d->m_cursorOverriden = false;
-			d->m_handle = CropFramePrivate::Handle::Unknown;
-			QApplication::restoreOverrideCursor();
-		}
+		d->overrideCurspr( e->pos() );
 
 		update();
 	}
