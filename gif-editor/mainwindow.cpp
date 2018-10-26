@@ -54,14 +54,23 @@
 class MainWindowPrivate {
 public:
 	MainWindowPrivate( MainWindow * parent )
-		:	m_view( new View( parent ) )
+		:	m_editMode( EditMode::Unknow )
+		,	m_view( new View( parent ) )
 		,	m_crop( nullptr )
 		,	m_save( nullptr )
 		,	m_saveAs( nullptr )
 		,	m_open( nullptr )
+		,	m_applyEdit( nullptr )
+		,	m_cancelEdit( nullptr )
 		,	q( parent )
 	{
 	}
+
+	//! Edit mode.
+	enum class EditMode {
+		Unknow,
+		Crop
+	}; // enum class EditMode
 
 	//! Clear view.
 	void clearView();
@@ -73,12 +82,17 @@ public:
 		m_save->setEnabled( on );
 		m_saveAs->setEnabled( on );
 		m_open->setEnabled( on );
+
+		m_applyEdit->setEnabled( !on );
+		m_cancelEdit->setEnabled( !on );
 	}
 
 	//! Current file name.
 	QString m_currentGif;
 	//! Frames.
 	std::vector< Magick::Image > m_frames;
+	//! Edit mode.
+	EditMode m_editMode;
 	//! View.
 	View * m_view;
 	//! Crop action.
@@ -89,6 +103,10 @@ public:
 	QAction * m_saveAs;
 	//! Open action.
 	QAction * m_open;
+	//! Apply edit action.
+	QAction * m_applyEdit;
+	//! Cancel edit action.
+	QAction * m_cancelEdit;
 	//! Parent.
 	MainWindow * q;
 }; // class MainWindowPrivate
@@ -156,7 +174,22 @@ MainWindow::MainWindow()
 	d->m_crop->setChecked( false );
 	d->m_crop->setEnabled( false );
 
+	d->m_applyEdit = new QAction( this );
+	d->m_applyEdit->setShortcut( Qt::Key_Return );
+	d->m_applyEdit->setShortcutContext( Qt::ApplicationShortcut );
+	d->m_applyEdit->setEnabled( false );
+
+	d->m_cancelEdit = new QAction( this );
+	d->m_cancelEdit->setShortcut( Qt::Key_Escape );
+	d->m_cancelEdit->setShortcutContext( Qt::ApplicationShortcut );
+	d->m_cancelEdit->setEnabled( false );
+
+	addAction( d->m_applyEdit );
+	addAction( d->m_cancelEdit );
+
 	connect( d->m_crop, &QAction::triggered, this, &MainWindow::crop );
+	connect( d->m_applyEdit, &QAction::triggered, this, &MainWindow::applyEdit );
+	connect( d->m_cancelEdit, &QAction::triggered, this, &MainWindow::cancelEdit );
 
 	auto edit = menuBar()->addMenu( tr( "&Edit" ) );
 	edit->addAction( d->m_crop );
@@ -329,12 +362,51 @@ MainWindow::crop( bool on )
 	{
 		d->enableFileActions( false );
 
+		d->m_editMode = MainWindowPrivate::EditMode::Crop;
+
 		d->m_view->startCrop();
 	}
 	else
 	{
 		d->m_view->stopCrop();
 
+		d->m_editMode = MainWindowPrivate::EditMode::Unknow;
+
 		d->enableFileActions();
+	}
+}
+
+void
+MainWindow::cancelEdit()
+{
+	switch( d->m_editMode )
+	{
+		case MainWindowPrivate::EditMode::Crop :
+		{
+			d->m_view->stopCrop();
+
+			d->enableFileActions();
+
+			d->m_crop->setChecked( false );
+		}
+			break;
+
+		default :
+			break;
+	}
+}
+
+void
+MainWindow::applyEdit()
+{
+	switch( d->m_editMode )
+	{
+		case MainWindowPrivate::EditMode::Crop :
+		{
+		}
+			break;
+
+		default :
+			break;
 	}
 }

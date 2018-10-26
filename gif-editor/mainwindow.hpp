@@ -60,6 +60,10 @@ private slots:
 	void frameChecked( int idx, bool on );
 	//! Crop.
 	void crop( bool on );
+	//! Cancel edit.
+	void cancelEdit();
+	//! Apply edit.
+	void applyEdit();
 
 private:
 	Q_DISABLE_COPY( MainWindow )

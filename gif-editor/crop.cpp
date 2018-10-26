@@ -448,6 +448,9 @@ CropFrame::CropFrame( Frame * parent )
 
 CropFrame::~CropFrame() noexcept
 {
+	if( d->m_cursorOverriden )
+		QApplication::restoreOverrideCursor();
+
 	if( d->m_hovered )
 		QApplication::restoreOverrideCursor();
 }
