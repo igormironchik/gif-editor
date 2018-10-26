@@ -72,7 +72,7 @@ public:
 	//! Check and override cursor if necessary.
 	void checkAndOverrideCursor( Qt::CursorShape shape );
 	//! Override cursor.
-	void overrideCurspr( const QPoint & pos );
+	void overrideCursor( const QPoint & pos );
 	//! Resize crop.
 	void resize( const QPoint & pos ) ;
 	//! \return Is handles should be outside selected rect.
@@ -132,6 +132,72 @@ public:
 				m_selected.y() + m_selected.height() -
 					( m_selected.height() > 0 ? c_handleSize : 0 ) - 1,
 				c_handleSize, c_handleSize ) );
+	}
+	//! \return Y handle width.
+	int yHandleWidth() const
+	{
+		const int w = m_selected.width() - 1;
+
+		return ( isHandleOutside() ? w :
+			w - 2 * c_handleSize - ( w - 2 * c_handleSize ) / 3 );
+	}
+	//! \return X handle height.
+	int xHandleHeight() const
+	{
+		const int h = m_selected.height() - 1;
+
+		return ( isHandleOutside() ? h :
+			h - 2 * c_handleSize - ( h - 2 * c_handleSize ) / 3 );
+	}
+	//! \return Y handle x position.
+	int yHandleXPos() const
+	{
+		return ( m_selected.x() + ( m_selected.width() - yHandleWidth() ) / 2 );
+	}
+	//! \return X handle y position.
+	int xHandleYPos() const
+	{
+		return ( m_selected.y() + ( m_selected.height() - xHandleHeight() ) / 2 );
+	}
+	//! \return Top handle rect.
+	QRect topHandleRect() const
+	{
+		return ( isHandleOutside() ?
+			QRect( yHandleXPos(), m_selected.y() - ( m_selected.height() > 0 ? c_handleSize : 0 ),
+				yHandleWidth(), c_handleSize ) :
+			QRect( yHandleXPos(), m_selected.y() - ( m_selected.height() > 0 ? 0 : c_handleSize ),
+				yHandleWidth(), c_handleSize ) );
+	}
+	//! \return Bottom handle rect.
+	QRect bottomHandleRect() const
+	{
+		return ( isHandleOutside() ?
+			QRect( yHandleXPos(), m_selected.y() + m_selected.height() - 1 -
+					( m_selected.height() > 0 ? 0 : c_handleSize ),
+				yHandleWidth(), c_handleSize ) :
+			QRect( yHandleXPos(), m_selected.y() + m_selected.height() - 1 -
+					( m_selected.height() > 0 ? c_handleSize : 0 ),
+				yHandleWidth(), c_handleSize ) );
+	}
+	//! \return Left handle rect.
+	QRect leftHandleRect() const
+	{
+		return ( isHandleOutside() ?
+			QRect( m_selected.x() - ( m_selected.width() > 0 ? c_handleSize : 0 ),
+				xHandleYPos(), c_handleSize, xHandleHeight() ) :
+			QRect( m_selected.x() - ( m_selected.width() > 0 ? 0 : c_handleSize ),
+				xHandleYPos(), c_handleSize, xHandleHeight() ) );
+	}
+	//! \return Right handle rect.
+	QRect rightHandleRect() const
+	{
+		return ( isHandleOutside() ?
+			QRect( m_selected.x() + m_selected.width() - 1 -
+					( m_selected.width() > 0 ? 0 : c_handleSize ),
+				xHandleYPos(), c_handleSize, xHandleHeight() ) :
+			QRect( m_selected.x() + m_selected.width() - 1 -
+					( m_selected.width() > 0 ? c_handleSize : 0 ),
+				xHandleYPos(), c_handleSize, xHandleHeight() ) );
 	}
 
 	//! Selected rectangle.
@@ -220,7 +286,7 @@ CropFramePrivate::checkAndOverrideCursor( Qt::CursorShape shape )
 }
 
 void
-CropFramePrivate::overrideCurspr( const QPoint & pos )
+CropFramePrivate::overrideCursor( const QPoint & pos )
 {
 	if( topLeftHandleRect().contains( pos ) )
 	{
@@ -241,6 +307,26 @@ CropFramePrivate::overrideCurspr( const QPoint & pos )
 	{
 		m_handle = CropFramePrivate::Handle::BottomLeft;
 		checkAndOverrideCursor( Qt::SizeBDiagCursor );
+	}
+	else if( topHandleRect().contains( pos ) )
+	{
+		m_handle = CropFramePrivate::Handle::Top;
+		checkAndOverrideCursor( Qt::SizeVerCursor );
+	}
+	else if( bottomHandleRect().contains( pos ) )
+	{
+		m_handle = CropFramePrivate::Handle::Bottom;
+		checkAndOverrideCursor( Qt::SizeVerCursor );
+	}
+	else if( leftHandleRect().contains( pos ) )
+	{
+		m_handle = CropFramePrivate::Handle::Left;
+		checkAndOverrideCursor( Qt::SizeHorCursor );
+	}
+	else if( rightHandleRect().contains( pos ) )
+	{
+		m_handle = CropFramePrivate::Handle::Right;
+		checkAndOverrideCursor( Qt::SizeHorCursor );
 	}
 	else if( m_selected.contains( pos ) )
 	{
@@ -285,8 +371,25 @@ CropFramePrivate::resize( const QPoint & pos )
 				m_mousePos + pos ) );
 		break;
 
-		default :
-			break;
+		case CropFramePrivate::Handle::Top :
+			m_selected.setTop( boundToAvailable( QPoint( m_selected.left(), m_selected.top() ) -
+				m_mousePos + pos ).y() );
+		break;
+
+		case CropFramePrivate::Handle::Bottom :
+			m_selected.setBottom( boundToAvailable( QPoint( m_selected.left(),
+				m_selected.bottom() ) - m_mousePos + pos ).y() );
+		break;
+
+		case CropFramePrivate::Handle::Left :
+			m_selected.setLeft( boundToAvailable( QPoint( m_selected.left(),
+				m_selected.top() ) - m_mousePos + pos ).x() );
+		break;
+
+		case CropFramePrivate::Handle::Right :
+			m_selected.setRight( boundToAvailable( QPoint( m_selected.right(),
+				m_selected.top() ) - m_mousePos + pos ).x() );
+		break;
 	}
 
 	m_mousePos = pos;
@@ -435,6 +538,22 @@ CropFrame::paintEvent( QPaintEvent * )
 				p.drawRect( d->bottomLeftHandleRect() );
 			break;
 
+			case CropFramePrivate::Handle::Top :
+				p.drawRect( d->topHandleRect() );
+			break;
+
+			case CropFramePrivate::Handle::Bottom :
+				p.drawRect( d->bottomHandleRect() );
+			break;
+
+			case CropFramePrivate::Handle::Left :
+				p.drawRect( d->leftHandleRect() );
+			break;
+
+			case CropFramePrivate::Handle::Right :
+				p.drawRect( d->rightHandleRect() );
+			break;
+
 			default:
 				break;
 		}
@@ -487,7 +606,7 @@ CropFrame::mouseMoveEvent( QMouseEvent * e )
 	}
 	else if( d->m_hovered && !d->m_nothing )
 	{
-		d->overrideCurspr( e->pos() );
+		d->overrideCursor( e->pos() );
 
 		update();
 	}
