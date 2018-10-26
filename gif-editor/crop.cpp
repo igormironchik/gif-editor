@@ -74,39 +74,59 @@ public:
 	//! \return Is handles should be outside selected rect.
 	bool isHandleOutside() const
 	{
-		return ( m_selected.width() / 3 < c_handleSize ||
-			m_selected.height() / 3 < c_handleSize );
+		return ( qAbs( m_selected.width() ) / 3 < c_handleSize + 1 ||
+			qAbs( m_selected.height() ) / 3 < c_handleSize + 1 );
 	}
 	//! \return Top-left handle rect.
 	QRect topLeftHandleRect() const
 	{
-		return ( isHandleOutside() ? QRect( m_selected.x() - c_handleSize,
-				m_selected.y() - c_handleSize, c_handleSize, c_handleSize ) :
-			QRect( m_selected.x(), m_selected.y(), c_handleSize, c_handleSize ) );
+		return ( isHandleOutside() ?
+			QRect( m_selected.x() - ( m_selected.width() > 0 ? c_handleSize : 0 ),
+				m_selected.y() - ( m_selected.height() > 0 ? c_handleSize : 0 ),
+				c_handleSize, c_handleSize ) :
+			QRect( m_selected.x() - ( m_selected.width() > 0 ? 0 : c_handleSize ),
+				m_selected.y() - ( m_selected.height() > 0 ? 0 : c_handleSize ),
+				c_handleSize, c_handleSize ) );
 	}
 	//! \return Top-right handle rect.
 	QRect topRightHandleRect() const
 	{
-		return ( isHandleOutside() ? QRect( m_selected.x() + m_selected.width() - 1,
-				m_selected.y() - c_handleSize, c_handleSize, c_handleSize ) :
-			QRect( m_selected.x() + m_selected.width() - c_handleSize - 1,
-				m_selected.y(), c_handleSize, c_handleSize ) );
+		return ( isHandleOutside() ?
+			QRect( m_selected.x() + m_selected.width() - 1 -
+					( m_selected.width() > 0 ? 0 : c_handleSize ),
+				m_selected.y() - ( m_selected.height() > 0 ? c_handleSize : 0 ),
+				c_handleSize, c_handleSize ) :
+			QRect( m_selected.x() + m_selected.width() -
+					( m_selected.width() > 0 ? c_handleSize : 0 ) - 1,
+				m_selected.y() - ( m_selected.height() > 0 ? 0 : c_handleSize ),
+				c_handleSize, c_handleSize ) );
 	}
 	//! \return Bottom-right handle rect.
 	QRect bottomRightHandleRect() const
 	{
-		return ( isHandleOutside() ? QRect( m_selected.x() + m_selected.width() - 1,
-				m_selected.y() + m_selected.height(), c_handleSize, c_handleSize ) :
-			QRect( m_selected.x() + m_selected.width() - c_handleSize - 1,
-				m_selected.y() + m_selected.height() - c_handleSize - 1,
+		return ( isHandleOutside() ?
+			QRect( m_selected.x() + m_selected.width() - 1 -
+					( m_selected.width() > 0 ? 0 : c_handleSize ),
+				m_selected.y() + m_selected.height() -
+					( m_selected.height() > 0 ? 0 : c_handleSize ),
+				c_handleSize, c_handleSize ) :
+			QRect( m_selected.x() + m_selected.width() -
+					( m_selected.width() > 0 ? c_handleSize : 0 ) - 1,
+				m_selected.y() + m_selected.height() -
+					( m_selected.height() > 0 ? c_handleSize : 0 )  - 1,
 				c_handleSize, c_handleSize ) );
 	}
 	//! \return Bottom-left handle rect.
 	QRect bottomLeftHandleRect() const
 	{
-		return ( isHandleOutside() ? QRect( m_selected.x() - c_handleSize,
-				m_selected.y() + m_selected.height() - 1, c_handleSize, c_handleSize ) :
-			QRect( m_selected.x(), m_selected.y() + m_selected.height() - c_handleSize - 1,
+		return ( isHandleOutside() ?
+			QRect( m_selected.x() - ( m_selected.width() > 0 ? c_handleSize : 0 ),
+				m_selected.y() + m_selected.height() - 1 -
+					( m_selected.height() > 0 ? 0 : c_handleSize),
+				c_handleSize, c_handleSize ) :
+			QRect( m_selected.x() - ( m_selected.width() > 0 ? 0 : c_handleSize),
+				m_selected.y() + m_selected.height() -
+					( m_selected.height() > 0 ? c_handleSize : 0 ) - 1,
 				c_handleSize, c_handleSize ) );
 	}
 
