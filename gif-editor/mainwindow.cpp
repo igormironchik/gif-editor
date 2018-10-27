@@ -393,6 +393,8 @@ MainWindow::cancelEdit()
 			d->enableFileActions();
 
 			d->m_crop->setChecked( false );
+
+			d->m_editMode = MainWindowPrivate::EditMode::Unknow;
 		}
 			break;
 
