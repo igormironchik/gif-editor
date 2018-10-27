@@ -208,8 +208,6 @@ public:
 	QRect m_available;
 	//! Mouse pos.
 	QPoint m_mousePos;
-	//! Current handle rect.
-	QRect m_currentHandleRect;
 	//! Selecting started.
 	bool m_started;
 	//! Nothing selected yet.
