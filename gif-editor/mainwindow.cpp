@@ -437,6 +437,8 @@ MainWindow::applyEdit()
 				}
 				catch( const Magick::Exception & x )
 				{
+					cancelEdit();
+
 					QMessageBox::warning( this, tr( "Failed to crop GIF..." ),
 						QString::fromLocal8Bit( x.what() ) );
 				}
