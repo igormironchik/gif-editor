@@ -57,6 +57,8 @@ public:
 
 	//! \return Is frame checked.
 	bool isChecked() const;
+	//! Set checked.
+	void setChecked( bool on = true );
 
 	//! \return Counter.
 	int counter() const;

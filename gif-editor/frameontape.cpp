@@ -138,6 +138,12 @@ FrameOnTape::isChecked() const
 	return d->m_checkBox->isChecked();
 }
 
+void
+FrameOnTape::setChecked( bool on )
+{
+	d->m_checkBox->setChecked( on );
+}
+
 int
 FrameOnTape::counter() const
 {

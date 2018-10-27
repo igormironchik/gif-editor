@@ -38,6 +38,7 @@
 #include <QAction>
 #include <QActionGroup>
 #include <QToolBar>
+#include <QVector>
 
 // Magick++ include.
 #include <Magick++.h>
@@ -421,6 +422,14 @@ MainWindow::applyEdit()
 
 			if( !rect.isNull() && rect != d->m_view->currentFrame()->image().rect() )
 			{
+				QVector< int > unchecked;
+
+				for( int i = 1; i <= d->m_view->tape()->count(); ++i )
+				{
+					if( !d->m_view->tape()->frame( i )->isChecked() )
+						unchecked.append( i );
+				}
+
 				try {
 					auto tmpFrames = d->m_frames;
 
@@ -439,6 +448,9 @@ MainWindow::applyEdit()
 					d->initTape();
 
 					d->m_view->tape()->setCurrentFrame( current );
+
+					for( const auto & i : qAsConst( unchecked ) )
+						d->m_view->tape()->frame( i )->setChecked( false );
 
 					setWindowModified( true );
 
