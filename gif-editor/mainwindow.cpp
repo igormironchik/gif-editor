@@ -86,6 +86,15 @@ public:
 		m_applyEdit->setEnabled( !on );
 		m_cancelEdit->setEnabled( !on );
 	}
+	//! Initialize tape.
+	void initTape()
+	{
+		std::for_each( m_frames.cbegin(), m_frames.cend(),
+			[this] ( const Magick::Image & img )
+			{
+				this->m_view->tape()->addFrame( this->convert( img ) );
+			} );
+	}
 
 	//! Current file name.
 	QString m_currentGif;
@@ -257,11 +266,7 @@ MainWindow::openGif()
 
 			d->m_currentGif = fileName;
 
-			std::for_each( d->m_frames.cbegin(), d->m_frames.cend(),
-				[this] ( const Magick::Image & img )
-				{
-					this->d->m_view->tape()->addFrame( this->d->convert( img ) );
-				} );
+			d->initTape();
 
 			if( !d->m_frames.empty() )
 				d->m_view->tape()->setCurrentFrame( 1 );
@@ -403,6 +408,41 @@ MainWindow::applyEdit()
 	{
 		case MainWindowPrivate::EditMode::Crop :
 		{
+			const auto rect = d->m_view->cropRect();
+
+			if( !rect.isNull() && rect != d->m_view->currentFrame()->image().rect() )
+			{
+				try {
+					auto tmpFrames = d->m_frames;
+
+					std::for_each( tmpFrames.begin(), tmpFrames.end(),
+						[&rect] ( auto & frame )
+						{
+							frame.crop( Magick::Geometry( rect.width(), rect.height(),
+								rect.x(), rect.y() ) );
+							frame.repage();
+						} );
+
+					const auto current = d->m_view->tape()->currentFrame()->counter();
+					d->m_view->tape()->clear();
+					d->m_frames = tmpFrames;
+
+					d->initTape();
+
+					d->m_view->tape()->setCurrentFrame( current );
+
+					setWindowModified( true );
+
+					cancelEdit();
+				}
+				catch( const Magick::Exception & x )
+				{
+					QMessageBox::warning( this, tr( "Failed to crop GIF..." ),
+						QString::fromLocal8Bit( x.what() ) );
+				}
+			}
+			else
+				cancelEdit();
 		}
 			break;
 
