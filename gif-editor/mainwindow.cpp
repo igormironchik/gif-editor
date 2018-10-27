@@ -177,6 +177,9 @@ MainWindow::MainWindow()
 	file->addAction( QIcon( ":/img/application-exit.png" ), tr( "Quit" ),
 		this, &MainWindow::quit, tr( "Ctrl+Q" ) );
 
+	d->m_save->setEnabled( false );
+	d->m_saveAs->setEnabled( false );
+
 	d->m_crop = new QAction( QIcon( ":/img/transform-crop.png" ),
 		tr( "Crop" ), this );
 	d->m_crop->setShortcut( tr( "Ctrl+C" ) );
@@ -280,6 +283,8 @@ MainWindow::openGif()
 				d->m_view->tape()->setCurrentFrame( 1 );
 
 			d->m_crop->setEnabled( true );
+			d->m_save->setEnabled( true );
+			d->m_saveAs->setEnabled( true );
 		}
 		catch( const Magick::Exception & x )
 		{
