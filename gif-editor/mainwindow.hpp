@@ -64,6 +64,10 @@ private slots:
 	void cancelEdit();
 	//! Apply edit.
 	void applyEdit();
+	//! About dialog
+	void about();
+	//! About Qt dialog.
+	void aboutQt();
 
 private:
 	Q_DISABLE_COPY( MainWindow )
