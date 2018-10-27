@@ -45,6 +45,7 @@
 
 // C++ include.
 #include <vector>
+#include <algorithm>
 
 
 //
