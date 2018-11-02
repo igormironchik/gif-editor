@@ -293,41 +293,55 @@ MainWindow::openGif()
 			QMessageBox::warning( this, tr( "Failed to open GIF..." ),
 				QString::fromLocal8Bit( x.what() ) );
 		}
+		catch( const std::bad_alloc & )
+		{
+			d->clearView();
+
+			QMessageBox::critical( this, tr( "Failed to open GIF..." ),
+				tr( "Out of memory." ) );
+		}
 	}
 }
 
 void
 MainWindow::saveGif()
 {
-	std::vector< Magick::Image > toSave;
+	try {
+		std::vector< Magick::Image > toSave;
 
-	for( int i = 0; i < d->m_view->tape()->count(); ++i )
-	{
-		if( d->m_view->tape()->frame( i + 1 )->isChecked() )
-			toSave.push_back( d->m_frames.at( static_cast< std::size_t > ( i ) ) );
-	}
-
-	if( !toSave.empty() )
-	{
-		try {
-			Magick::writeImages( toSave.begin(), toSave.end(), d->m_currentGif.toStdString() );
-
-			d->m_view->tape()->removeUnchecked();
-
-			d->m_frames = toSave;
-
-			setWindowModified( false );
-		}
-		catch( const Magick::Exception & x )
+		for( int i = 0; i < d->m_view->tape()->count(); ++i )
 		{
-			QMessageBox::warning( this, tr( "Failed to save GIF..." ),
-				QString::fromLocal8Bit( x.what() ) );
+			if( d->m_view->tape()->frame( i + 1 )->isChecked() )
+				toSave.push_back( d->m_frames.at( static_cast< std::size_t > ( i ) ) );
+		}
+
+		if( !toSave.empty() )
+		{
+			try {
+				Magick::writeImages( toSave.begin(), toSave.end(), d->m_currentGif.toStdString() );
+
+				d->m_view->tape()->removeUnchecked();
+
+				d->m_frames = toSave;
+
+				setWindowModified( false );
+			}
+			catch( const Magick::Exception & x )
+			{
+				QMessageBox::warning( this, tr( "Failed to save GIF..." ),
+					QString::fromLocal8Bit( x.what() ) );
+			}
+		}
+		else
+		{
+			QMessageBox::information( this, tr( "Can't save GIF..." ),
+				tr( "Can't save GIF image with no frames." ) );
 		}
 	}
-	else
+	catch( const std::bad_alloc & )
 	{
-		QMessageBox::information( this, tr( "Can't save GIF..." ),
-			tr( "Can't save GIF image with no frames." ) );
+		QMessageBox::critical( this, tr( "Failed to save GIF..." ),
+			tr( "Out of memory." ) );
 	}
 }
 
@@ -467,6 +481,13 @@ MainWindow::applyEdit()
 
 					QMessageBox::warning( this, tr( "Failed to crop GIF..." ),
 						QString::fromLocal8Bit( x.what() ) );
+				}
+				catch( const std::bad_alloc & )
+				{
+					cancelEdit();
+
+					QMessageBox::critical( this, tr( "Failed to crop GIF..." ),
+						tr( "Out of memory." ) );
 				}
 			}
 			else

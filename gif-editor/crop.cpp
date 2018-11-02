@@ -77,6 +77,8 @@ public:
 	void resize( const QPoint & pos ) ;
 	//! \return Cropped rect.
 	QRect cropped( const QRect & full ) const;
+	//! Restore overriden cursor.
+	void restoreOverridenCursor();
 	//! \return Is handles should be outside selected rect.
 	bool isHandleOutside() const
 	{
@@ -425,6 +427,19 @@ CropFramePrivate::cropped( const QRect & full ) const
 	return r;
 }
 
+void
+CropFramePrivate::restoreOverridenCursor()
+{
+	if( m_cursorOverriden )
+		QApplication::restoreOverrideCursor();
+
+	if( m_hovered )
+		QApplication::restoreOverrideCursor();
+
+	m_cursorOverriden = false;
+	m_hovered = false;
+}
+
 
 //
 // CropFrame
@@ -446,11 +461,7 @@ CropFrame::CropFrame( Frame * parent )
 
 CropFrame::~CropFrame() noexcept
 {
-	if( d->m_cursorOverriden )
-		QApplication::restoreOverrideCursor();
-
-	if( d->m_hovered )
-		QApplication::restoreOverrideCursor();
+	d->restoreOverridenCursor();
 }
 
 QRect
@@ -472,6 +483,8 @@ void
 CropFrame::stop()
 {
 	d->m_started = false;
+
+	d->restoreOverridenCursor();
 
 	update();
 }
