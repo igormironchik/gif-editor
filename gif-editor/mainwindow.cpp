@@ -422,6 +422,8 @@ MainWindow::cancelEdit()
 			d->m_crop->setChecked( false );
 
 			d->m_editMode = MainWindowPrivate::EditMode::Unknow;
+
+			QApplication::processEvents();
 		}
 			break;
 
