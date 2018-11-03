@@ -27,6 +27,7 @@
 #include "frame.hpp"
 #include "frameontape.hpp"
 #include "busyindicator.hpp"
+#include "about.hpp"
 
 // Qt include.
 #include <QMenuBar>
@@ -65,6 +66,7 @@ public:
 		,	m_stack( new QStackedWidget( parent ) )
 		,	m_busy( new BusyIndicator( m_stack ) )
 		,	m_view( new View( m_stack ) )
+		,	m_about( new About( parent ) )
 		,	m_crop( nullptr )
 		,	m_save( nullptr )
 		,	m_saveAs( nullptr )
@@ -72,6 +74,7 @@ public:
 		,	m_applyEdit( nullptr )
 		,	m_cancelEdit( nullptr )
 		,	m_quit( nullptr )
+		,	m_editToolBar( nullptr )
 		,	q( parent )
 	{
 		m_busy->setRadius( 75 );
@@ -122,6 +125,8 @@ public:
 		m_saveAs->setEnabled( false );
 		m_open->setEnabled( false );
 		m_quit->setEnabled( false );
+
+		m_editToolBar->hide();
 	}
 	//! Ready state.
 	void ready()
@@ -144,6 +149,8 @@ public:
 
 		m_open->setEnabled( true );
 		m_quit->setEnabled( true );
+
+		m_editToolBar->show();
 	}
 	//! Wait for thread pool.
 	void waitThreadPool()
@@ -176,6 +183,8 @@ public:
 	BusyIndicator * m_busy;
 	//! View.
 	View * m_view;
+	//! Widget about.
+	About * m_about;
 	//! Crop action.
 	QAction * m_crop;
 	//! Save action.
@@ -190,6 +199,8 @@ public:
 	QAction * m_cancelEdit;
 	//! Quit action.
 	QAction * m_quit;
+	//! Edit toolbar.
+	QToolBar * m_editToolBar;
 	//! Parent.
 	MainWindow * q;
 }; // class MainWindowPrivate
@@ -282,10 +293,12 @@ MainWindow::MainWindow()
 	auto edit = menuBar()->addMenu( tr( "&Edit" ) );
 	edit->addAction( d->m_crop );
 
-	auto editToolBar = new QToolBar( tr( "Edit" ), this );
-	editToolBar->addAction( d->m_crop );
+	d->m_editToolBar = new QToolBar( tr( "Edit" ), this );
+	d->m_editToolBar->addAction( d->m_crop );
 
-	addToolBar( Qt::LeftToolBarArea, editToolBar );
+	addToolBar( Qt::LeftToolBarArea, d->m_editToolBar );
+
+	d->m_editToolBar->hide();
 
 	auto help = menuBar()->addMenu( tr( "&Help" ) );
 	help->addAction( QIcon( ":/img/icon_22x22.png" ), tr( "About" ),
@@ -293,6 +306,7 @@ MainWindow::MainWindow()
 	help->addAction( QIcon( ":/img/qt.png" ), tr( "About Qt" ),
 		this, &MainWindow::aboutQt );
 
+	d->m_stack->addWidget( d->m_about );
 	d->m_stack->addWidget( d->m_view );
 	d->m_stack->addWidget( d->m_busy );
 
@@ -477,6 +491,10 @@ MainWindow::openGif()
 
 			d->ready();
 
+			d->m_editToolBar->hide();
+
+			d->m_stack->setCurrentWidget( d->m_about );
+
 			QMessageBox::warning( this, tr( "Failed to open GIF..." ),
 				QString::fromLocal8Bit( x.what() ) );
 		}
@@ -485,6 +503,10 @@ MainWindow::openGif()
 			d->clearView();
 
 			d->ready();
+
+			d->m_editToolBar->hide();
+
+			d->m_stack->setCurrentWidget( d->m_about );
 
 			QMessageBox::critical( this, tr( "Failed to open GIF..." ),
 				tr( "Out of memory." ) );

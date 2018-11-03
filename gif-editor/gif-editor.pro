@@ -9,7 +9,8 @@ HEADERS = mainwindow.hpp \
 	tape.hpp \
 	view.hpp \
 	crop.hpp \
-	busyindicator.hpp
+	busyindicator.hpp \
+	about.hpp
 
 SOURCES = main.cpp \
     mainwindow.cpp \
@@ -18,7 +19,8 @@ SOURCES = main.cpp \
 	tape.cpp \
 	view.cpp \
 	crop.cpp \
-	busyindicator.cpp
+	busyindicator.cpp \
+	about.cpp
 
 RESOURCES = resources.qrc
 
