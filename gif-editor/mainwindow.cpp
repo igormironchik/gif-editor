@@ -136,7 +136,9 @@ public:
 
 		if( !m_currentGif.isEmpty() )
 		{
-			m_save->setEnabled( true );
+			if( q->isWindowModified() )
+				m_save->setEnabled( true );
+
 			m_saveAs->setEnabled( true );
 		}
 
@@ -148,6 +150,16 @@ public:
 	{
 		while( !QThreadPool::globalInstance()->waitForDone( 100 / 6 ) )
 			QApplication::processEvents();
+	}
+	//! Set modified state.
+	void setModified( bool on )
+	{
+		q->setWindowModified( on );
+
+		if( on )
+			m_save->setEnabled( true );
+		else
+			m_save->setEnabled( false );
 	}
 
 	//! Current file name.
@@ -406,7 +418,7 @@ MainWindow::openGif()
 
 		d->clearView();
 
-		setWindowModified( false );
+		d->setModified( false );
 
 		setWindowTitle( tr( "GIF Editor" ) );
 
@@ -447,7 +459,6 @@ MainWindow::openGif()
 				d->m_view->tape()->setCurrentFrame( 1 );
 
 			d->m_crop->setEnabled( true );
-			d->m_save->setEnabled( true );
 			d->m_saveAs->setEnabled( true );
 
 			d->ready();
@@ -541,7 +552,7 @@ MainWindow::saveGif()
 
 				d->m_frames = toSave;
 
-				setWindowModified( false );
+				d->setModified( false );
 			}
 			catch( const Magick::Exception & x )
 			{
@@ -610,7 +621,7 @@ MainWindow::quit()
 void
 MainWindow::frameChecked( int, bool )
 {
-	setWindowModified( true );
+	d->setModified( true );
 }
 
 void
@@ -710,7 +721,7 @@ MainWindow::applyEdit()
 					for( const auto & i : qAsConst( unchecked ) )
 						d->m_view->tape()->frame( i )->setChecked( false );
 
-					setWindowModified( true );
+					d->setModified( true );
 
 					cancelEdit();
 
