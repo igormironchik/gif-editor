@@ -27,6 +27,8 @@
 #include <QPainter>
 #include <QResizeEvent>
 #include <QMouseEvent>
+#include <QMenu>
+#include <QFileDialog>
 
 
 //
@@ -109,6 +111,11 @@ Frame::Frame( const QImage & img, ResizeMode mode, QWidget * parent )
 			setSizePolicy( QSizePolicy::Fixed, QSizePolicy::Expanding );
 		break;
 	}
+
+	setContextMenuPolicy( Qt::CustomContextMenu );
+
+	connect( this, &QWidget::customContextMenuRequested,
+		this, &Frame::contextMenuRequested );
 }
 
 Frame::~Frame() noexcept
@@ -177,4 +184,27 @@ Frame::mouseReleaseEvent( QMouseEvent * e )
 	}
 	else
 		e->ignore();
+}
+
+void
+Frame::contextMenuRequested( const QPoint & pos )
+{
+	QMenu menu( this );
+
+	menu.addAction( QIcon( ":/img/document-save-as.png"), tr( "Save Current Frame" ),
+		[this] ()
+		{
+			auto fileName = QFileDialog::getSaveFileName( this,
+				tr( "Choose file to save to..." ), QString(), tr( "PNG (*.png)" ) );
+
+			if( !fileName.isEmpty() )
+			{
+				if( !fileName.endsWith( QLatin1String( ".png" ), Qt::CaseInsensitive ) )
+					fileName.append( QLatin1String( ".png" ) );
+
+				this->d->m_image.save( fileName );
+			}
+		} );
+
+	menu.exec( mapToGlobal( pos ) );
 }

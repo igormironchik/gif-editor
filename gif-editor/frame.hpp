@@ -67,6 +67,10 @@ public:
 
 	QSize sizeHint() const override;
 
+private slots:
+	//! Context menu requested.
+	void contextMenuRequested( const QPoint & pos );
+
 protected:
 	void paintEvent( QPaintEvent * ) override;
 	void resizeEvent( QResizeEvent * e ) override;
