@@ -309,8 +309,6 @@ MainWindow::~MainWindow() noexcept
 void
 MainWindow::closeEvent( QCloseEvent * e )
 {
-	quit();
-
 	if ( d->m_busyFlag )
 	{
 		const auto btn = QMessageBox::question( this, tr( "GIF editor is busy..." ),
@@ -327,6 +325,8 @@ MainWindow::closeEvent( QCloseEvent * e )
 	}
 	else
 		e->accept();
+
+	quit();
 }
 
 namespace /* anonymous */ {
