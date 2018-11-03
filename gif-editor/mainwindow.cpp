@@ -311,10 +311,22 @@ MainWindow::closeEvent( QCloseEvent * e )
 {
 	quit();
 
-	if ( !d->m_busyFlag )
-		e->accept();
+	if ( d->m_busyFlag )
+	{
+		const auto btn = QMessageBox::question( this, tr( "GIF editor is busy..." ),
+			tr( "GIF editor is busy.\nDo you want to terminate the application?" ) );
+
+		if( btn == QMessageBox::Yes )
+		{
+			exit( -1 );
+
+			e->accept();
+		}
+		else
+			e->ignore();
+	}
 	else
-		e->ignore();
+		e->accept();
 }
 
 namespace /* anonymous */ {
