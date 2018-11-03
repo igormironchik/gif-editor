@@ -350,6 +350,8 @@ public:
 		return m_eptr;
 	}
 
+	~RunnableWithException() noexcept override = default;
+
 protected:
 	std::exception_ptr m_eptr;
 }; // class RunnableWithException
