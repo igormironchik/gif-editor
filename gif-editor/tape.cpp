@@ -27,6 +27,7 @@
 // Qt include.
 #include <QList>
 #include <QHBoxLayout>
+#include <QApplication>
 
 
 //
@@ -180,7 +181,11 @@ Tape::clear()
 	const int c = count();
 
 	for( int i = 1; i <= c; ++i )
+	{
 		removeFrame( 1 );
+
+		QApplication::processEvents();
+	}
 }
 
 void
@@ -196,6 +201,8 @@ Tape::removeUnchecked()
 			removeFrame( i - removed );
 
 			++removed;
+
+			QApplication::processEvents();
 		}
 		else
 			frame( i - removed )->setCounter( i - removed );

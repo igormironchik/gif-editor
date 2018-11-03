@@ -26,6 +26,7 @@
 #include "tape.hpp"
 #include "frame.hpp"
 #include "frameontape.hpp"
+#include "busyindicator.hpp"
 
 // Qt include.
 #include <QMenuBar>
@@ -39,6 +40,9 @@
 #include <QActionGroup>
 #include <QToolBar>
 #include <QVector>
+#include <QStackedWidget>
+#include <QRunnable>
+#include <QThreadPool>
 
 // Magick++ include.
 #include <Magick++.h>
@@ -57,15 +61,20 @@ class MainWindowPrivate {
 public:
 	MainWindowPrivate( MainWindow * parent )
 		:	m_editMode( EditMode::Unknow )
-		,	m_view( new View( parent ) )
+		,	m_busyFlag( false )
+		,	m_stack( new QStackedWidget( parent ) )
+		,	m_busy( new BusyIndicator( m_stack ) )
+		,	m_view( new View( m_stack ) )
 		,	m_crop( nullptr )
 		,	m_save( nullptr )
 		,	m_saveAs( nullptr )
 		,	m_open( nullptr )
 		,	m_applyEdit( nullptr )
 		,	m_cancelEdit( nullptr )
+		,	m_quit( nullptr )
 		,	q( parent )
 	{
+		m_busy->setRadius( 75 );
 	}
 
 	//! Edit mode.
@@ -95,7 +104,50 @@ public:
 			[this] ( const Magick::Image & img )
 			{
 				this->m_view->tape()->addFrame( this->convert( img ) );
+
+				QApplication::processEvents();
 			} );
+	}
+	//! Busy state.
+	void busy()
+	{
+		m_busyFlag = true;
+
+		m_stack->setCurrentWidget( m_busy );
+
+		m_busy->setRunning( true );
+
+		m_crop->setEnabled( false );
+		m_save->setEnabled( false );
+		m_saveAs->setEnabled( false );
+		m_open->setEnabled( false );
+		m_quit->setEnabled( false );
+	}
+	//! Ready state.
+	void ready()
+	{
+		m_busyFlag = false;
+
+		m_stack->setCurrentWidget( m_view );
+
+		m_busy->setRunning( false );
+
+		m_crop->setEnabled( true );
+
+		if( !m_currentGif.isEmpty() )
+		{
+			m_save->setEnabled( true );
+			m_saveAs->setEnabled( true );
+		}
+
+		m_open->setEnabled( true );
+		m_quit->setEnabled( true );
+	}
+	//! Wait for thread pool.
+	void waitThreadPool()
+	{
+		while( !QThreadPool::globalInstance()->waitForDone( 100 / 6 ) )
+			QApplication::processEvents();
 	}
 
 	//! Current file name.
@@ -104,6 +156,12 @@ public:
 	std::vector< Magick::Image > m_frames;
 	//! Edit mode.
 	EditMode m_editMode;
+	//! Busy flag.
+	bool m_busyFlag;
+	//! Stacked widget.
+	QStackedWidget * m_stack;
+	//! Busy indicator.
+	BusyIndicator * m_busy;
 	//! View.
 	View * m_view;
 	//! Crop action.
@@ -118,6 +176,8 @@ public:
 	QAction * m_applyEdit;
 	//! Cancel edit action.
 	QAction * m_cancelEdit;
+	//! Quit action.
+	QAction * m_quit;
 	//! Parent.
 	MainWindow * q;
 }; // class MainWindowPrivate
@@ -150,6 +210,8 @@ MainWindowPrivate::convert( const Magick::Image & img )
 				static_cast< int > ( 255 * rgb.green() ),
 				static_cast< int > ( 255 * rgb.blue() ) ).rgb());
         }
+
+		QApplication::processEvents();
     }
 
 	return qimg;
@@ -174,7 +236,7 @@ MainWindow::MainWindow()
 	d->m_saveAs = file->addAction( QIcon( ":/img/document-save-as.png" ), tr( "Save As" ),
 		this, &MainWindow::saveGifAs );
 	file->addSeparator();
-	file->addAction( QIcon( ":/img/application-exit.png" ), tr( "Quit" ),
+	d->m_quit = file->addAction( QIcon( ":/img/application-exit.png" ), tr( "Quit" ),
 		this, &MainWindow::quit, tr( "Ctrl+Q" ) );
 
 	d->m_save->setEnabled( false );
@@ -219,7 +281,10 @@ MainWindow::MainWindow()
 	help->addAction( QIcon( ":/img/qt.png" ), tr( "About Qt" ),
 		this, &MainWindow::aboutQt );
 
-	setCentralWidget( d->m_view );
+	d->m_stack->addWidget( d->m_view );
+	d->m_stack->addWidget( d->m_busy );
+
+	setCentralWidget( d->m_stack );
 
 	connect( d->m_view->tape(), &Tape::checkStateChanged,
 		this, &MainWindow::frameChecked );
@@ -234,8 +299,89 @@ MainWindow::closeEvent( QCloseEvent * e )
 {
 	quit();
 
-	e->accept();
+	if ( !d->m_busyFlag )
+		e->accept();
+	else
+		e->ignore();
 }
+
+namespace /* anonymous */ {
+
+class RunnableWithException
+	:	public QRunnable
+{
+public:
+	std::exception_ptr exception() const
+	{
+		return m_eptr;
+	}
+
+protected:
+	std::exception_ptr m_eptr;
+}; // class RunnableWithException
+
+
+class ReadGIF final
+	:	public RunnableWithException
+{
+public:
+	ReadGIF( std::vector< Magick::Image > * container,
+		const std::string & fileName )
+		:	m_container( container )
+		,	m_fileName( fileName )
+	{
+		setAutoDelete( false );
+	}
+
+	void run() override
+	{
+		try {
+			Magick::readImages( m_container, m_fileName );
+		}
+		catch( ... )
+		{
+			m_eptr = std::current_exception();
+		}
+	}
+
+private:
+	std::vector< Magick::Image > * m_container;
+	std::string m_fileName;
+}; // class ReadGIF
+
+
+class CoalesceGIF final
+	:	public RunnableWithException
+{
+public:
+	CoalesceGIF( std::vector< Magick::Image > * container,
+		std::vector< Magick::Image >::iterator first,
+		std::vector< Magick::Image >::iterator last )
+		:	m_container( container )
+		,	m_first( first )
+		,	m_last( last )
+	{
+		setAutoDelete( false );
+	}
+
+	void run() override
+	{
+		try {
+			Magick::coalesceImages( m_container, m_first, m_last );
+		}
+		catch( ... )
+		{
+			m_eptr = std::current_exception();
+		}
+	}
+
+private:
+	std::vector< Magick::Image > * m_container;
+	std::vector< Magick::Image >::iterator m_first;
+	std::vector< Magick::Image >::iterator m_last;
+}; // class CoalesceGIF
+
+} /* namespace anonymous */
 
 void
 MainWindow::openGif()
@@ -256,20 +402,38 @@ MainWindow::openGif()
 				saveGif();
 		}
 
+		d->busy();
+
 		d->clearView();
 
 		setWindowModified( false );
 
 		setWindowTitle( tr( "GIF Editor" ) );
 
+		d->m_currentGif = QString();
+
+		QApplication::processEvents();
+
 		d->m_view->currentFrame()->setImage( QImage() );
 
 		try {
 			std::vector< Magick::Image > frames;
 
-			Magick::readImages( &frames, fileName.toStdString() );
+			ReadGIF read( &frames, fileName.toStdString() );
+			QThreadPool::globalInstance()->start( &read );
 
-			Magick::coalesceImages( &d->m_frames, frames.begin(), frames.end() );
+			d->waitThreadPool();
+
+			if( read.exception() )
+				std::rethrow_exception( read.exception() );
+
+			CoalesceGIF coalesce( &d->m_frames, frames.begin(), frames.end() );
+			QThreadPool::globalInstance()->start( &coalesce );
+
+			d->waitThreadPool();
+
+			if( coalesce.exception() )
+				std::rethrow_exception( coalesce.exception() );
 
 			QFileInfo info( fileName );
 
@@ -285,10 +449,14 @@ MainWindow::openGif()
 			d->m_crop->setEnabled( true );
 			d->m_save->setEnabled( true );
 			d->m_saveAs->setEnabled( true );
+
+			d->ready();
 		}
 		catch( const Magick::Exception & x )
 		{
 			d->clearView();
+
+			d->ready();
 
 			QMessageBox::warning( this, tr( "Failed to open GIF..." ),
 				QString::fromLocal8Bit( x.what() ) );
@@ -297,16 +465,55 @@ MainWindow::openGif()
 		{
 			d->clearView();
 
+			d->ready();
+
 			QMessageBox::critical( this, tr( "Failed to open GIF..." ),
 				tr( "Out of memory." ) );
 		}
 	}
 }
 
+namespace /* anonymous */ {
+
+class WriteGIF final
+	:	public RunnableWithException
+{
+public:
+	WriteGIF( std::vector< Magick::Image >::iterator first,
+		std::vector< Magick::Image >::iterator last,
+		const std::string & fileName )
+		:	m_first( first )
+		,	m_last( last )
+		,	m_fileName( fileName )
+	{
+		setAutoDelete( false );
+	}
+
+	void run() override
+	{
+		try {
+			Magick::writeImages( m_first, m_last, m_fileName );
+		}
+		catch( ... )
+		{
+			m_eptr = std::current_exception();
+		}
+	}
+
+private:
+	std::vector< Magick::Image >::iterator m_first;
+	std::vector< Magick::Image >::iterator m_last;
+	std::string m_fileName;
+}; // class WriteGIF
+
+} /* namespace anonymous */
+
 void
 MainWindow::saveGif()
 {
 	try {
+		d->busy();
+
 		std::vector< Magick::Image > toSave;
 
 		for( int i = 0; i < d->m_view->tape()->count(); ++i )
@@ -315,12 +522,22 @@ MainWindow::saveGif()
 				toSave.push_back( d->m_frames.at( static_cast< std::size_t > ( i ) ) );
 		}
 
+		QApplication::processEvents();
+
 		if( !toSave.empty() )
 		{
 			try {
-				Magick::writeImages( toSave.begin(), toSave.end(), d->m_currentGif.toStdString() );
+				WriteGIF runnable( toSave.begin(), toSave.end(), d->m_currentGif.toStdString() );
+				QThreadPool::globalInstance()->start( &runnable );
+
+				d->waitThreadPool();
+
+				if( runnable.exception() )
+					std::rethrow_exception( runnable.exception() );
 
 				d->m_view->tape()->removeUnchecked();
+
+				QApplication::processEvents();
 
 				d->m_frames = toSave;
 
@@ -328,6 +545,8 @@ MainWindow::saveGif()
 			}
 			catch( const Magick::Exception & x )
 			{
+				d->ready();
+
 				QMessageBox::warning( this, tr( "Failed to save GIF..." ),
 					QString::fromLocal8Bit( x.what() ) );
 			}
@@ -337,9 +556,13 @@ MainWindow::saveGif()
 			QMessageBox::information( this, tr( "Can't save GIF..." ),
 				tr( "Can't save GIF image with no frames." ) );
 		}
+
+		d->ready();
 	}
 	catch( const std::bad_alloc & )
 	{
+		d->ready();
+
 		QMessageBox::critical( this, tr( "Failed to save GIF..." ),
 			tr( "Out of memory." ) );
 	}
@@ -369,16 +592,19 @@ MainWindow::saveGifAs()
 void
 MainWindow::quit()
 {
-	if( isWindowModified() )
+	if( !d->m_busyFlag )
 	{
-		auto btn = QMessageBox::question( this, tr( "GIF was changed..." ),
-			tr( "GIF was changed. Do you want to save changes?" ) );
+		if( isWindowModified() )
+		{
+			auto btn = QMessageBox::question( this, tr( "GIF was changed..." ),
+				tr( "GIF was changed. Do you want to save changes?" ) );
 
-		if( btn == QMessageBox::Yes )
-			saveGif();
+			if( btn == QMessageBox::Yes )
+				saveGif();
+		}
+
+		QApplication::quit();
 	}
-
-	QApplication::quit();
 }
 
 void
@@ -438,11 +664,13 @@ MainWindow::applyEdit()
 	switch( d->m_editMode )
 	{
 		case MainWindowPrivate::EditMode::Crop :
-		{
+		{	
 			const auto rect = d->m_view->cropRect();
 
 			if( !rect.isNull() && rect != d->m_view->currentFrame()->image().rect() )
 			{
+				d->busy();
+
 				QVector< int > unchecked;
 
 				for( int i = 1; i <= d->m_view->tape()->count(); ++i )
@@ -450,6 +678,8 @@ MainWindow::applyEdit()
 					if( !d->m_view->tape()->frame( i )->isChecked() )
 						unchecked.append( i );
 				}
+
+				QApplication::processEvents();
 
 				try {
 					auto tmpFrames = d->m_frames;
@@ -459,12 +689,19 @@ MainWindow::applyEdit()
 						{
 							frame.crop( Magick::Geometry( rect.width(), rect.height(),
 								rect.x(), rect.y() ) );
+
+							QApplication::processEvents();
+
 							frame.repage();
+
+							QApplication::processEvents();
 						} );
 
 					const auto current = d->m_view->tape()->currentFrame()->counter();
 					d->m_view->tape()->clear();
 					d->m_frames = tmpFrames;
+
+					QApplication::processEvents();
 
 					d->initTape();
 
@@ -476,9 +713,13 @@ MainWindow::applyEdit()
 					setWindowModified( true );
 
 					cancelEdit();
+
+					d->ready();
 				}
 				catch( const Magick::Exception & x )
 				{
+					d->ready();
+
 					cancelEdit();
 
 					QMessageBox::warning( this, tr( "Failed to crop GIF..." ),
@@ -486,6 +727,8 @@ MainWindow::applyEdit()
 				}
 				catch( const std::bad_alloc & )
 				{
+					d->ready();
+
 					cancelEdit();
 
 					QMessageBox::critical( this, tr( "Failed to crop GIF..." ),

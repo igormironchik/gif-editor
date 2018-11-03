@@ -8,7 +8,8 @@ HEADERS = mainwindow.hpp \
 	frameontape.hpp \
 	tape.hpp \
 	view.hpp \
-	crop.hpp
+	crop.hpp \
+	busyindicator.hpp
 
 SOURCES = main.cpp \
     mainwindow.cpp \
@@ -16,7 +17,8 @@ SOURCES = main.cpp \
 	frameontape.cpp \
 	tape.cpp \
 	view.cpp \
-	crop.cpp
+	crop.cpp \
+	busyindicator.cpp
 
 RESOURCES = resources.qrc
 
