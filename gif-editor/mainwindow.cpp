@@ -315,11 +315,7 @@ MainWindow::closeEvent( QCloseEvent * e )
 			tr( "GIF editor is busy.\nDo you want to terminate the application?" ) );
 
 		if( btn == QMessageBox::Yes )
-		{
 			exit( -1 );
-
-			e->accept();
-		}
 		else
 			e->ignore();
 	}
