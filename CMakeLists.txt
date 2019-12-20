@@ -13,7 +13,7 @@ SET( CMAKE_CXX_STANDARD_REQUIRED ON )
 
 project( GifEditor )
 
-find_package( ImageMagick REQUIRED COMPONENTS Magick++ MagickCore )
+find_package( ImageMagick 6 REQUIRED COMPONENTS Magick++ MagickCore )
 
 add_definitions( -DMAGICKCORE_QUANTUM_DEPTH=16 )
 add_definitions( -DMAGICKCORE_HDRI_ENABLE=0 )
