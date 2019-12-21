@@ -41,6 +41,7 @@ public:
 		Frame * parent )
 		:	m_image( img )
 		,	m_mode( mode )
+		,	m_dirty( false )
 		,	q( parent )
 	{
 	}
@@ -56,6 +57,8 @@ public:
 	QImage m_thumbnail;
 	//! Resize mode.
 	Frame::ResizeMode m_mode;
+	//! Dirty frame. We need to resize the image to actual size before drawing.
+	bool m_dirty;
 	//! Parent.
 	Frame * q;
 }; // class FramePrivate
@@ -63,6 +66,8 @@ public:
 void
 FramePrivate::createThumbnail()
 {
+	m_dirty = false;
+
 	if( m_image.width() > q->width() || m_image.height() > q->height() )
 	{
 		switch( m_mode )
@@ -89,7 +94,7 @@ FramePrivate::resized()
 
 	q->updateGeometry();
 
-	q->update();
+	emit q->resized();
 }
 
 
@@ -151,12 +156,15 @@ Frame::imageRect() const
 QSize
 Frame::sizeHint() const
 {
-	return d->m_thumbnail.size();
+	return ( d->m_thumbnail.isNull() ? QSize( 10, 10 ) : d->m_thumbnail.size() );
 }
 
 void
 Frame::paintEvent( QPaintEvent * )
 {
+	if( d->m_dirty )
+		d->resized();
+
 	QPainter p( this );
 	p.drawImage( imageRect(), d->m_thumbnail, d->m_thumbnail.rect() );
 }
@@ -166,11 +174,9 @@ Frame::resizeEvent( QResizeEvent * e )
 {
 	if( d->m_mode == ResizeMode::FitToSize ||
 		( d->m_mode == ResizeMode::FitToHeight && e->size().height() != d->m_thumbnail.height() ) )
-			d->resized();
+			d->m_dirty = true;
 
 	e->accept();
-
-	emit resized();
 }
 
 void

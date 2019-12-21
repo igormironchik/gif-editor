@@ -76,7 +76,7 @@ public:
 	//! Resize crop.
 	void resize( const QPoint & pos ) ;
 	//! \return Cropped rect.
-	QRect cropped( const QRect & full ) const;
+	QRectF cropped( const QRect & full ) const;
 	//! Restore overriden cursor.
 	void restoreOverridenCursor();
 	//! \return Is handles should be outside selected rect.
@@ -89,58 +89,58 @@ public:
 	QRect topLeftHandleRect() const
 	{
 		return ( isHandleOutside() ?
-			QRect( m_selected.x() - ( m_selected.width() > 0 ? c_handleSize : 0 ),
-				m_selected.y() - ( m_selected.height() > 0 ? c_handleSize : 0 ),
+			QRect( qRound( m_selected.x() - ( m_selected.width() > 0 ? c_handleSize : 0 ) ),
+				qRound( m_selected.y() - ( m_selected.height() > 0 ? c_handleSize : 0 ) ),
 				c_handleSize, c_handleSize ) :
-			QRect( m_selected.x() - ( m_selected.width() > 0 ? 0 : c_handleSize ),
-				m_selected.y() - ( m_selected.height() > 0 ? 0 : c_handleSize ),
+			QRect( qRound( m_selected.x() - ( m_selected.width() > 0 ? 0 : c_handleSize ) ),
+				qRound( m_selected.y() - ( m_selected.height() > 0 ? 0 : c_handleSize ) ),
 				c_handleSize, c_handleSize ) );
 	}
 	//! \return Top-right handle rect.
 	QRect topRightHandleRect() const
 	{
 		return ( isHandleOutside() ?
-			QRect( m_selected.x() + m_selected.width() - 1 -
-					( m_selected.width() > 0 ? 0 : c_handleSize ),
-				m_selected.y() - ( m_selected.height() > 0 ? c_handleSize : 0 ),
+			QRect( qRound( m_selected.x() + m_selected.width() - 1 -
+					( m_selected.width() > 0 ? 0 : c_handleSize ) ),
+				qRound( m_selected.y() - ( m_selected.height() > 0 ? c_handleSize : 0 ) ),
 				c_handleSize, c_handleSize ) :
-			QRect( m_selected.x() + m_selected.width() -
-					( m_selected.width() > 0 ? c_handleSize : 0 ) - 1,
-				m_selected.y() - ( m_selected.height() > 0 ? 0 : c_handleSize ),
+			QRect( qRound( m_selected.x() + m_selected.width() -
+					( m_selected.width() > 0 ? c_handleSize : 0 ) - 1 ),
+				qRound( m_selected.y() - ( m_selected.height() > 0 ? 0 : c_handleSize ) ),
 				c_handleSize, c_handleSize ) );
 	}
 	//! \return Bottom-right handle rect.
 	QRect bottomRightHandleRect() const
 	{
 		return ( isHandleOutside() ?
-			QRect( m_selected.x() + m_selected.width() - 1 -
-					( m_selected.width() > 0 ? 0 : c_handleSize ),
-				m_selected.y() + m_selected.height() -
-					( m_selected.height() > 0 ? 0 : c_handleSize ),
+			QRect( qRound( m_selected.x() + m_selected.width() - 1 -
+					( m_selected.width() > 0 ? 0 : c_handleSize ) ),
+				qRound( m_selected.y() + m_selected.height() -
+					( m_selected.height() > 0 ? 0 : c_handleSize ) ),
 				c_handleSize, c_handleSize ) :
-			QRect( m_selected.x() + m_selected.width() -
-					( m_selected.width() > 0 ? c_handleSize : 0 ) - 1,
-				m_selected.y() + m_selected.height() -
-					( m_selected.height() > 0 ? c_handleSize : 0 )  - 1,
+			QRect( qRound( m_selected.x() + m_selected.width() -
+					( m_selected.width() > 0 ? c_handleSize : 0 ) - 1 ),
+				qRound( m_selected.y() + m_selected.height() -
+					( m_selected.height() > 0 ? c_handleSize : 0 )  - 1 ),
 				c_handleSize, c_handleSize ) );
 	}
 	//! \return Bottom-left handle rect.
 	QRect bottomLeftHandleRect() const
 	{
 		return ( isHandleOutside() ?
-			QRect( m_selected.x() - ( m_selected.width() > 0 ? c_handleSize : 0 ),
-				m_selected.y() + m_selected.height() - 1 -
-					( m_selected.height() > 0 ? 0 : c_handleSize),
+			QRect( qRound( m_selected.x() - ( m_selected.width() > 0 ? c_handleSize : 0 ) ),
+				qRound( m_selected.y() + m_selected.height() - 1 -
+					( m_selected.height() > 0 ? 0 : c_handleSize ) ),
 				c_handleSize, c_handleSize ) :
-			QRect( m_selected.x() - ( m_selected.width() > 0 ? 0 : c_handleSize),
-				m_selected.y() + m_selected.height() -
-					( m_selected.height() > 0 ? c_handleSize : 0 ) - 1,
+			QRect( qRound( m_selected.x() - ( m_selected.width() > 0 ? 0 : c_handleSize ) ),
+				qRound( m_selected.y() + m_selected.height() -
+					( m_selected.height() > 0 ? c_handleSize : 0 ) - 1 ),
 				c_handleSize, c_handleSize ) );
 	}
 	//! \return Y handle width.
 	int yHandleWidth() const
 	{
-		const int w = m_selected.width() - 1;
+		const int w = qRound( m_selected.width() - 1 );
 
 		return ( isHandleOutside() ? w :
 			w - 2 * c_handleSize - ( w - 2 * c_handleSize ) / 3 );
@@ -148,7 +148,7 @@ public:
 	//! \return X handle height.
 	int xHandleHeight() const
 	{
-		const int h = m_selected.height() - 1;
+		const int h = qRound( m_selected.height() - 1 );
 
 		return ( isHandleOutside() ? h :
 			h - 2 * c_handleSize - ( h - 2 * c_handleSize ) / 3 );
@@ -156,56 +156,56 @@ public:
 	//! \return Y handle x position.
 	int yHandleXPos() const
 	{
-		return ( m_selected.x() + ( m_selected.width() - yHandleWidth() ) / 2 );
+		return qRound( m_selected.x() + ( m_selected.width() - yHandleWidth() ) / 2.0 );
 	}
 	//! \return X handle y position.
 	int xHandleYPos() const
 	{
-		return ( m_selected.y() + ( m_selected.height() - xHandleHeight() ) / 2 );
+		return qRound( m_selected.y() + ( m_selected.height() - xHandleHeight() ) / 2.0 );
 	}
 	//! \return Top handle rect.
 	QRect topHandleRect() const
 	{
 		return ( isHandleOutside() ?
-			QRect( yHandleXPos(), m_selected.y() - ( m_selected.height() > 0 ? c_handleSize : 0 ),
+			QRect( yHandleXPos(), qRound( m_selected.y() - ( m_selected.height() > 0 ? c_handleSize : 0 ) ),
 				yHandleWidth(), c_handleSize ) :
-			QRect( yHandleXPos(), m_selected.y() - ( m_selected.height() > 0 ? 0 : c_handleSize ),
+			QRect( yHandleXPos(), qRound( m_selected.y() - ( m_selected.height() > 0 ? 0 : c_handleSize ) ),
 				yHandleWidth(), c_handleSize ) );
 	}
 	//! \return Bottom handle rect.
 	QRect bottomHandleRect() const
 	{
 		return ( isHandleOutside() ?
-			QRect( yHandleXPos(), m_selected.y() + m_selected.height() - 1 -
-					( m_selected.height() > 0 ? 0 : c_handleSize ),
+			QRect( yHandleXPos(), qRound( m_selected.y() + m_selected.height() - 1 -
+					( m_selected.height() > 0 ? 0 : c_handleSize ) ),
 				yHandleWidth(), c_handleSize ) :
-			QRect( yHandleXPos(), m_selected.y() + m_selected.height() - 1 -
-					( m_selected.height() > 0 ? c_handleSize : 0 ),
+			QRect( yHandleXPos(), qRound( m_selected.y() + m_selected.height() - 1 -
+					( m_selected.height() > 0 ? c_handleSize : 0 ) ),
 				yHandleWidth(), c_handleSize ) );
 	}
 	//! \return Left handle rect.
 	QRect leftHandleRect() const
 	{
 		return ( isHandleOutside() ?
-			QRect( m_selected.x() - ( m_selected.width() > 0 ? c_handleSize : 0 ),
+			QRect( qRound( m_selected.x() - ( m_selected.width() > 0 ? c_handleSize : 0 ) ),
 				xHandleYPos(), c_handleSize, xHandleHeight() ) :
-			QRect( m_selected.x() - ( m_selected.width() > 0 ? 0 : c_handleSize ),
+			QRect( qRound( m_selected.x() - ( m_selected.width() > 0 ? 0 : c_handleSize ) ),
 				xHandleYPos(), c_handleSize, xHandleHeight() ) );
 	}
 	//! \return Right handle rect.
 	QRect rightHandleRect() const
 	{
 		return ( isHandleOutside() ?
-			QRect( m_selected.x() + m_selected.width() - 1 -
-					( m_selected.width() > 0 ? 0 : c_handleSize ),
+			QRect( qRound( m_selected.x() + m_selected.width() - 1 -
+					( m_selected.width() > 0 ? 0 : c_handleSize ) ),
 				xHandleYPos(), c_handleSize, xHandleHeight() ) :
-			QRect( m_selected.x() + m_selected.width() - 1 -
-					( m_selected.width() > 0 ? c_handleSize : 0 ),
+			QRect( qRound( m_selected.x() + m_selected.width() - 1 -
+					( m_selected.width() > 0 ? c_handleSize : 0 ) ),
 				xHandleYPos(), c_handleSize, xHandleHeight() ) );
 	}
 
 	//! Selected rectangle.
-	QRect m_selected;
+	QRectF m_selected;
 	//! Available rectangle.
 	QRect m_available;
 	//! Mouse pos.
@@ -235,13 +235,13 @@ CropFramePrivate::boundToAvailable( const QPoint & p ) const
 
 	if( p.x() < m_available.x() )
 		ret.setX( m_available.x() );
-	else if( p.x() > m_available.x() + m_available.width() - 1 )
-		ret.setX( m_available.x() + m_available.width() - 1 );
+	else if( p.x() > m_available.x() + m_available.width() )
+		ret.setX( m_available.x() + m_available.width() );
 
 	if( p.y() < m_available.y() )
 		ret.setY( m_available.y() );
-	else if( p.y() > m_available.y() + m_available.height() - 1 )
-		ret.setY( m_available.y() + m_available.height() - 1 );
+	else if( p.y() > m_available.y() + m_available.height() )
+		ret.setY( m_available.y() + m_available.height() );
 
 	return ret;
 }
@@ -253,13 +253,13 @@ CropFramePrivate::boundLeftTopToAvailable( const QPoint & p ) const
 
 	if( p.x() < m_available.x() )
 		ret.setX( m_available.x() );
-	else if( p.x() > m_available.x() + m_available.width() - m_selected.width() - 1)
-		ret.setX( m_available.x() + m_available.width() - m_selected.width() - 1 );
+	else if( p.x() > m_available.x() + m_available.width() - qRound( m_selected.width() ) - 1 )
+		ret.setX( m_available.x() + m_available.width() - qRound( m_selected.width() ) - 1 );
 
 	if( p.y() < m_available.y() )
 		ret.setY( m_available.y() );
-	else if( p.y() > m_available.y() + m_available.height() - m_selected.height() - 1 )
-		ret.setY( m_available.y() + m_available.height() - m_selected.height() - 1 );
+	else if( p.y() > m_available.y() + m_available.height() - qRound( m_selected.height() ) - 1 )
+		ret.setY( m_available.y() + m_available.height() - qRound( m_selected.height() ) - 1 );
 
 	return ret;
 }
@@ -350,54 +350,54 @@ CropFramePrivate::resize( const QPoint & pos )
 	{
 		case CropFramePrivate::Handle::Unknown :
 			m_selected.moveTo( boundLeftTopToAvailable(
-				m_selected.topLeft() - m_mousePos + pos ) );
+				m_selected.topLeft().toPoint() - m_mousePos + pos ) );
 		break;
 
 		case CropFramePrivate::Handle::TopLeft :
-			m_selected.setTopLeft( boundToAvailable( m_selected.topLeft() -
+			m_selected.setTopLeft( boundToAvailable( m_selected.topLeft().toPoint() -
 				m_mousePos + pos ) );
 		break;
 
 		case CropFramePrivate::Handle::TopRight :
-			m_selected.setTopRight( boundToAvailable( m_selected.topRight() -
+			m_selected.setTopRight( boundToAvailable( m_selected.topRight().toPoint() -
 				m_mousePos + pos ) );
 		break;
 
 		case CropFramePrivate::Handle::BottomRight :
-			m_selected.setBottomRight( boundToAvailable( m_selected.bottomRight() -
+			m_selected.setBottomRight( boundToAvailable( m_selected.bottomRight().toPoint() -
 				m_mousePos + pos ) );
 		break;
 
 		case CropFramePrivate::Handle::BottomLeft :
-			m_selected.setBottomLeft( boundToAvailable( m_selected.bottomLeft() -
+			m_selected.setBottomLeft( boundToAvailable( m_selected.bottomLeft().toPoint() -
 				m_mousePos + pos ) );
 		break;
 
 		case CropFramePrivate::Handle::Top :
-			m_selected.setTop( boundToAvailable( QPoint( m_selected.left(), m_selected.top() ) -
-				m_mousePos + pos ).y() );
+			m_selected.setTop( boundToAvailable( QPoint( qRound( m_selected.left() ),
+				qRound( m_selected.top() ) ) - m_mousePos + pos ).y() );
 		break;
 
 		case CropFramePrivate::Handle::Bottom :
-			m_selected.setBottom( boundToAvailable( QPoint( m_selected.left(),
-				m_selected.bottom() ) - m_mousePos + pos ).y() );
+			m_selected.setBottom( boundToAvailable( QPoint( qRound( m_selected.left() ),
+				qRound( m_selected.bottom() ) ) - m_mousePos + pos ).y() );
 		break;
 
 		case CropFramePrivate::Handle::Left :
-			m_selected.setLeft( boundToAvailable( QPoint( m_selected.left(),
-				m_selected.top() ) - m_mousePos + pos ).x() );
+			m_selected.setLeft( boundToAvailable( QPoint( qRound( m_selected.left() ),
+				qRound( m_selected.top() ) ) - m_mousePos + pos ).x() );
 		break;
 
 		case CropFramePrivate::Handle::Right :
-			m_selected.setRight( boundToAvailable( QPoint( m_selected.right(),
-				m_selected.top() ) - m_mousePos + pos ).x() );
+			m_selected.setRight( boundToAvailable( QPoint( qRound( m_selected.right() ),
+				qRound( m_selected.top() ) ) - m_mousePos + pos ).x() );
 		break;
 	}
 
 	m_mousePos = pos;
 }
 
-QRect
+QRectF
 CropFramePrivate::cropped( const QRect & full ) const
 {
 	const auto oldR = m_available;
@@ -407,21 +407,17 @@ CropFramePrivate::cropped( const QRect & full ) const
 	const qreal yRatio = static_cast< qreal > ( full.height() ) /
 		static_cast< qreal > ( oldR.height() );
 
-	QRect r;
+	QRectF r;
 
 	if( !m_nothing )
 	{
-		const auto x = static_cast< int >( ( m_selected.x() - oldR.x() ) * xRatio ) +
-			full.x();
-		const auto y = static_cast< int >( ( m_selected.y() - oldR.y() ) * yRatio ) +
-			full.y();
-		const auto dx = full.bottomRight().x() - static_cast< int >(
-			( oldR.bottomRight().x() - m_selected.bottomRight().x() ) * xRatio );
-		const auto dy = full.bottomRight().y() - static_cast< int >(
-			( oldR.bottomRight().y() - m_selected.bottomRight().y() ) * yRatio );
+		const auto x = ( m_selected.x() - oldR.x() ) * xRatio + full.x();
+		const auto y = ( m_selected.y() - oldR.y() ) * yRatio + full.y();
+		const auto w = m_selected.width() * xRatio;
+		const auto h = m_selected.height() * yRatio;
 
-		r.setTopLeft( QPoint( x, y ) );
-		r.setBottomRight( QPoint( dx, dy ) );
+		r.setTopLeft( QPointF( x, y ) );
+		r.setSize( QSizeF( w, h ) );
 	}
 
 	return r;
@@ -467,7 +463,7 @@ CropFrame::~CropFrame() noexcept
 QRect
 CropFrame::cropRect() const
 {
-	return d->cropped( d->m_frame->image().rect() );
+	return d->cropped( d->m_frame->image().rect() ).toRect();
 }
 
 void
@@ -515,10 +511,10 @@ CropFrame::paintEvent( QPaintEvent * )
 		QPainterPath path;
 		path.addRect( QRectF( d->m_available ).adjusted( 0, 0, -1, -1 ) );
 
-		if( d->m_available != d->m_selected )
+		if( d->m_available != d->m_selected.toRect() )
 		{
 			QPainterPath spath;
-			spath.addRect( QRectF( d->m_selected ).adjusted( 0, 0, -1, -1 ) );
+			spath.addRect( d->m_selected.adjusted( 0, 0, -1, -1 ) );
 			path = path.subtracted( spath );
 		}
 		else
