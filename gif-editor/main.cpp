@@ -38,17 +38,17 @@ int main( int argc, char ** argv )
 
 	QApplication app( argc, argv );
 
-	QIcon appIcon( ":/img/icon_256x256.png" );
-	appIcon.addFile( ":/img/icon_128x128.png" );
-	appIcon.addFile( ":/img/icon_64x64.png" );
-	appIcon.addFile( ":/img/icon_48x48.png" );
-	appIcon.addFile( ":/img/icon_32x32.png" );
-	appIcon.addFile( ":/img/icon_22x22.png" );
-	appIcon.addFile( ":/img/icon_16x16.png" );
+	QIcon appIcon( QStringLiteral( ":/img/icon_256x256.png" ) );
+	appIcon.addFile( QStringLiteral( ":/img/icon_128x128.png" ) );
+	appIcon.addFile( QStringLiteral( ":/img/icon_64x64.png" ) );
+	appIcon.addFile( QStringLiteral( ":/img/icon_48x48.png" ) );
+	appIcon.addFile( QStringLiteral( ":/img/icon_32x32.png" ) );
+	appIcon.addFile( QStringLiteral( ":/img/icon_22x22.png" ) );
+	appIcon.addFile( QStringLiteral( ":/img/icon_16x16.png" ) );
 	app.setWindowIcon( appIcon );
 
 	QTranslator appTranslator;
-	appTranslator.load( "./tr/gif-editor_" + QLocale::system().name() );
+	appTranslator.load( QStringLiteral( "./tr/gif-editor_" ) + QLocale::system().name() );
 	app.installTranslator( &appTranslator );
 
 	MainWindow w;

@@ -197,7 +197,8 @@ Frame::contextMenuRequested( const QPoint & pos )
 {
 	QMenu menu( this );
 
-	menu.addAction( QIcon( ":/img/document-save-as.png"), tr( "Save Current Frame" ),
+	menu.addAction( QIcon( QStringLiteral( ":/img/document-save-as.png" ) ),
+		tr( "Save Current Frame" ),
 		[this] ()
 		{
 			auto fileName = QFileDialog::getSaveFileName( this,
@@ -205,8 +206,8 @@ Frame::contextMenuRequested( const QPoint & pos )
 
 			if( !fileName.isEmpty() )
 			{
-				if( !fileName.endsWith( QLatin1String( ".png" ), Qt::CaseInsensitive ) )
-					fileName.append( QLatin1String( ".png" ) );
+				if( !fileName.endsWith( QStringLiteral( ".png" ), Qt::CaseInsensitive ) )
+					fileName.append( QStringLiteral( ".png" ) );
 
 				this->d->m_image.save( fileName );
 			}

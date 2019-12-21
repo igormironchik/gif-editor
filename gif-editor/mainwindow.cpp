@@ -44,6 +44,7 @@
 #include <QStackedWidget>
 #include <QRunnable>
 #include <QThreadPool>
+#include <QStandardPaths>
 
 // Magick++ include.
 #include <Magick++.h>
@@ -251,21 +252,21 @@ MainWindow::MainWindow()
 	setWindowTitle( tr( "GIF Editor" ) );
 
 	auto file = menuBar()->addMenu( tr( "&File" ) );
-	d->m_open = file->addAction( QIcon( ":/img/document-open.png" ), tr( "Open" ),
+	d->m_open = file->addAction( QIcon( QStringLiteral( ":/img/document-open.png" ) ), tr( "Open" ),
 		this, &MainWindow::openGif, tr( "Ctrl+O" ) );
 	file->addSeparator();
-	d->m_save = file->addAction( QIcon( ":/img/document-save.png" ), tr( "Save" ),
+	d->m_save = file->addAction( QIcon( QStringLiteral( ":/img/document-save.png" ) ), tr( "Save" ),
 		this, &MainWindow::saveGif, tr( "Ctrl+S" ) );
-	d->m_saveAs = file->addAction( QIcon( ":/img/document-save-as.png" ), tr( "Save As" ),
+	d->m_saveAs = file->addAction( QIcon( QStringLiteral( ":/img/document-save-as.png" ) ), tr( "Save As" ),
 		this, &MainWindow::saveGifAs );
 	file->addSeparator();
-	d->m_quit = file->addAction( QIcon( ":/img/application-exit.png" ), tr( "Quit" ),
+	d->m_quit = file->addAction( QIcon( QStringLiteral( ":/img/application-exit.png" ) ), tr( "Quit" ),
 		this, &MainWindow::quit, tr( "Ctrl+Q" ) );
 
 	d->m_save->setEnabled( false );
 	d->m_saveAs->setEnabled( false );
 
-	d->m_crop = new QAction( QIcon( ":/img/transform-crop.png" ),
+	d->m_crop = new QAction( QIcon( QStringLiteral( ":/img/transform-crop.png" ) ),
 		tr( "Crop" ), this );
 	d->m_crop->setShortcut( tr( "Ctrl+C" ) );
 	d->m_crop->setShortcutContext( Qt::ApplicationShortcut );
@@ -301,9 +302,9 @@ MainWindow::MainWindow()
 	d->m_editToolBar->hide();
 
 	auto help = menuBar()->addMenu( tr( "&Help" ) );
-	help->addAction( QIcon( ":/img/icon_22x22.png" ), tr( "About" ),
+	help->addAction( QIcon( QStringLiteral( ":/img/icon_22x22.png" ) ), tr( "About" ),
 		this, &MainWindow::about );
-	help->addAction( QIcon( ":/img/qt.png" ), tr( "About Qt" ),
+	help->addAction( QIcon( QStringLiteral( ":/img/qt.png" ) ), tr( "About Qt" ),
 		this, &MainWindow::aboutQt );
 
 	d->m_stack->addWidget( d->m_about );
@@ -422,8 +423,13 @@ private:
 void
 MainWindow::openGif()
 {
+	static const auto pictureLocations =
+		QStandardPaths::standardLocations( QStandardPaths::PicturesLocation );
+
 	const auto fileName = QFileDialog::getOpenFileName( this,
-		tr( "Open GIF..." ), QString(), tr( "GIF (*.gif)" ) );
+		tr( "Open GIF..." ),
+		( !pictureLocations.isEmpty() ? pictureLocations.first() : QString() ),
+		tr( "GIF (*.gif)" ) );
 
 	if( !fileName.isEmpty() )
 	{
@@ -619,8 +625,8 @@ MainWindow::saveGifAs()
 
 	if( !fileName.isEmpty() )
 	{
-		if( !fileName.endsWith( QLatin1String( ".gif" ), Qt::CaseInsensitive ) )
-			fileName.append( QLatin1String( ".gif" ) );
+		if( !fileName.endsWith( QStringLiteral( ".gif" ), Qt::CaseInsensitive ) )
+			fileName.append( QStringLiteral( ".gif" ) );
 
 		d->m_currentGif = fileName;
 
@@ -707,7 +713,7 @@ MainWindow::applyEdit()
 	switch( d->m_editMode )
 	{
 		case MainWindowPrivate::EditMode::Crop :
-		{	
+		{
 			const auto rect = d->m_view->cropRect();
 
 			if( !rect.isNull() && rect != d->m_view->currentFrame()->image().rect() )

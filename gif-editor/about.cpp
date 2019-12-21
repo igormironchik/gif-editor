@@ -41,7 +41,7 @@ About::About( QWidget * parent )
 	l->addItem( new QSpacerItem( 0, 0, QSizePolicy::Expanding, QSizePolicy::Fixed ) );
 
 	auto p = new QLabel( this );
-	p->setPixmap( QPixmap( ":/img/icon_128x128.png" ) );
+	p->setPixmap( QPixmap( QStringLiteral( ":/img/icon_128x128.png" ) ) );
 	l->addWidget( p );
 
 	auto t = new QLabel( this );
