@@ -139,6 +139,8 @@ Frame::setImage( const QImage & img )
 	d->m_image = img;
 
 	d->resized();
+
+	update();
 }
 
 QRect
