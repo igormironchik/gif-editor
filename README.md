@@ -18,3 +18,7 @@ Magick++ from ImageMagick is required.
 
 There is a book about this project on GitHub
 [https://github.com/igormironchik/qt-widgets-on-real-example](https://github.com/igormironchik/qt-widgets-on-real-example)
+
+# Screenshot
+
+![](gifeditor.png)
