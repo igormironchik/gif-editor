@@ -12,7 +12,7 @@ more resources by editing policy.xml, for example enlarge disk quota.
 
 # Dependencies
 
-Magick++ from ImageMagick is required.
+Magick++ from ImageMagick 6 is required.
 
 # Book
 
