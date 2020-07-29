@@ -26,6 +26,7 @@
 // Qt include.
 #include <QPainter>
 #include <QVariantAnimation>
+#include <QPainterPath>
 
 
 //

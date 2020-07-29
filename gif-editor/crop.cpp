@@ -29,6 +29,7 @@
 #include <QMouseEvent>
 #include <QPainter>
 #include <QApplication>
+#include <QPainterPath>
 
 
 //! Size of the handle to change geometry of selected region.
