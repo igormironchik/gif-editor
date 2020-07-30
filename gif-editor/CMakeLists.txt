@@ -5,9 +5,9 @@ set( CMAKE_AUTOMOC ON )
 set( CMAKE_AUTORCC ON )
 set( CMAKE_AUTOUIC ON )
 
-find_package(Qt5 COMPONENTS Core REQUIRED)
-find_package(Qt5 COMPONENTS Widgets REQUIRED)
-find_package(Qt5 COMPONENTS Gui REQUIRED)
+find_package(Qt5Core 5.15 REQUIRED)
+find_package(Qt5Widgets 5.15 REQUIRED)
+find_package(Qt5Gui 5.15 REQUIRED)
 
 set( SRC main.cpp
 	about.cpp
