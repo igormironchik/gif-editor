@@ -27,6 +27,29 @@
 #include <QWidget>
 #include <QScopedPointer>
 
+// Magick++ include.
+#include <Magick++.h>
+
+
+//
+// ImageRef
+//
+
+//! Reference to full image.
+struct ImageRef final {
+	using PosType = std::vector< Magick::Image >::size_type;
+	const std::vector< Magick::Image > & m_data;
+	PosType m_pos;
+	bool m_isEmpty;
+}; // struct ImageRef
+
+
+//
+// convert
+//
+
+QImage convert( const Magick::Image & img );
+
 
 //
 // Frame
@@ -55,14 +78,20 @@ public:
 		FitToHeight
 	}; // enum class ResizeMode
 
-	Frame( const QImage & img, ResizeMode mode, QWidget * parent = nullptr );
+	Frame( const ImageRef & img, ResizeMode mode, QWidget * parent = nullptr );
 	~Frame() noexcept override;
 
 	//! \return Image.
-	const QImage & image() const;
+	const ImageRef & image() const;
 	//! Set image.
-	void setImage( const QImage & img );
+	void setImagePos( const ImageRef::PosType & pos );
+	//! Clear image.
+	void clearImage();
+	//! Apply image.
+	void applyImage();
 	//! \return Thumbnail image rect.
+	QRect thumbnailRect() const;
+	//! \return Image rect.
 	QRect imageRect() const;
 
 	QSize sizeHint() const override;

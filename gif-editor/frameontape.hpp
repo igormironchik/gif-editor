@@ -27,6 +27,9 @@
 #include <QFrame>
 #include <QScopedPointer>
 
+// GIF editor include.
+#include "frame.hpp"
+
 
 //
 // FrameOnTape
@@ -47,13 +50,17 @@ signals:
 	void checked( int idx, bool on );
 
 public:
-	FrameOnTape( const QImage & img, int counter, QWidget * parent = nullptr );
+	FrameOnTape( const ImageRef & img, int counter, QWidget * parent = nullptr );
 	~FrameOnTape() noexcept override;
 
 	//! \return Image.
-	const QImage & image() const;
+	const ImageRef & image() const;
 	//! Set image.
-	void setImage( const QImage & img );
+	void setImagePos( const ImageRef::PosType & pos );
+	//! Clear image.
+	void clearImage();
+	//! Apply image.
+	void applyImage();
 
 	//! \return Is frame checked.
 	bool isChecked() const;

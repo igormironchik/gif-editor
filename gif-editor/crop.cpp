@@ -450,7 +450,7 @@ CropFrame::CropFrame( Frame * parent )
 	setAttribute( Qt::WA_TranslucentBackground, true );
 	setMouseTracking( true );
 
-	d->m_available = parent->imageRect();
+	d->m_available = parent->thumbnailRect();
 
 	connect( d->m_frame, &Frame::resized,
 		this, &CropFrame::frameResized );
@@ -464,7 +464,7 @@ CropFrame::~CropFrame() noexcept
 QRect
 CropFrame::cropRect() const
 {
-	return d->cropped( d->m_frame->image().rect() ).toRect();
+	return d->cropped( d->m_frame->imageRect() ).toRect();
 }
 
 void
@@ -489,11 +489,11 @@ CropFrame::stop()
 void
 CropFrame::frameResized()
 {
-	d->m_selected = d->cropped( d->m_frame->imageRect() );
+	d->m_selected = d->cropped( d->m_frame->thumbnailRect() );
 
 	setGeometry( QRect( 0, 0, d->m_frame->width(), d->m_frame->height() ) );
 
-	d->m_available = d->m_frame->imageRect();
+	d->m_available = d->m_frame->thumbnailRect();
 
 	update();
 }

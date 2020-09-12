@@ -22,7 +22,6 @@
 
 // GIF editor include.
 #include "frameontape.hpp"
-#include "frame.hpp"
 
 // Qt include.
 #include <QHBoxLayout>
@@ -37,7 +36,7 @@
 
 class FrameOnTapePrivate {
 public:
-	FrameOnTapePrivate( const QImage & img, int counter, FrameOnTape * parent )
+	FrameOnTapePrivate( const ImageRef & img, int counter, FrameOnTape * parent )
 		:	m_counter( counter )
 		,	m_current( false )
 		,	m_frame( new Frame( img, Frame::ResizeMode::FitToHeight, parent ) )
@@ -84,7 +83,7 @@ FrameOnTapePrivate::setCurrent( bool on )
 // FrameOnTape
 //
 
-FrameOnTape::FrameOnTape( const QImage & img, int counter, QWidget * parent )
+FrameOnTape::FrameOnTape( const ImageRef & img, int counter, QWidget * parent )
 	:	QFrame( parent )
 	,	d( new FrameOnTapePrivate( img, counter, this ) )
 {
@@ -120,16 +119,28 @@ FrameOnTape::~FrameOnTape() noexcept
 {
 }
 
-const QImage &
+const ImageRef &
 FrameOnTape::image() const
 {
 	return d->m_frame->image();
 }
 
 void
-FrameOnTape::setImage( const QImage & img )
+FrameOnTape::setImagePos( const ImageRef::PosType & pos )
 {
-	d->m_frame->setImage( img );
+	d->m_frame->setImagePos( pos );
+}
+
+void
+FrameOnTape::clearImage()
+{
+	d->m_frame->clearImage();
+}
+
+void
+FrameOnTape::applyImage()
+{
+	d->m_frame->applyImage();
 }
 
 bool

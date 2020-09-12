@@ -45,6 +45,12 @@ public:
 		m_layout->setSpacing( 5 );
 	}
 
+	void clearImages()
+	{
+		for( auto & f : qAsConst( m_frames ) )
+			f->clearImage();
+	}
+
 	//! Frames.
 	QList< FrameOnTape* > m_frames;
 	//! Current frame.
@@ -77,7 +83,7 @@ Tape::count() const
 }
 
 void
-Tape::addFrame( const QImage & img )
+Tape::addFrame( const ImageRef & img )
 {
 	d->m_frames.append( new FrameOnTape( img, count() + 1, this ) );
 	d->m_layout->addWidget( d->m_frames.back() );
@@ -140,6 +146,8 @@ Tape::removeFrame( int idx )
 {
 	if( idx <= count() )
 	{
+		d->clearImages();
+
 		d->m_layout->removeWidget( d->m_frames.at( idx - 1 ) );
 		d->m_frames.at( idx - 1 )->deleteLater();
 

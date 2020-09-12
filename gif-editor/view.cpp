@@ -38,9 +38,9 @@
 
 class ViewPrivate {
 public:
-	ViewPrivate( View * parent )
+	ViewPrivate( const std::vector< Magick::Image > & data, View * parent )
 		:	m_tape( nullptr )
-		,	m_currentFrame( new Frame( QImage(), Frame::ResizeMode::FitToSize, parent ) )
+		,	m_currentFrame( new Frame( { data, 0, true }, Frame::ResizeMode::FitToSize, parent ) )
 		,	m_crop( nullptr )
 		,	q( parent )
 	{
@@ -61,9 +61,9 @@ public:
 // View
 //
 
-View::View( QWidget * parent )
+View::View( const std::vector< Magick::Image > & data, QWidget * parent )
 	:	QWidget( parent )
-	,	d( new ViewPrivate( this ) )
+	,	d( new ViewPrivate( data, this ) )
 {
 	QVBoxLayout * layout = new QVBoxLayout( this );
 	layout->setMargin( 0 );
@@ -139,7 +139,10 @@ void
 View::frameSelected( int idx )
 {
 	if( idx >= 1 && idx <= d->m_tape->count() )
-		d->m_currentFrame->setImage( d->m_tape->frame( idx )->image() );
+	{
+		d->m_currentFrame->setImagePos( (ImageRef::PosType) idx - 1 );
+		d->m_currentFrame->applyImage();
+	}
 	else
-		d->m_currentFrame->setImage( QImage() );
+		d->m_currentFrame->clearImage();
 }

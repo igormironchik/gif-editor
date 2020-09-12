@@ -66,7 +66,7 @@ public:
 		,	m_busyFlag( false )
 		,	m_stack( new QStackedWidget( parent ) )
 		,	m_busy( new BusyIndicator( m_stack ) )
-		,	m_view( new View( m_stack ) )
+		,	m_view( new View( m_frames, m_stack ) )
 		,	m_about( new About( parent ) )
 		,	m_crop( nullptr )
 		,	m_save( nullptr )
@@ -89,8 +89,6 @@ public:
 
 	//! Clear view.
 	void clearView();
-	//! Convert Magick::Image to QImage.
-	QImage convert( const Magick::Image & img );
 	//! Enable file actions.
 	void enableFileActions( bool on = true )
 	{
@@ -104,13 +102,12 @@ public:
 	//! Initialize tape.
 	void initTape()
 	{
-		std::for_each( m_frames.cbegin(), m_frames.cend(),
-			[this] ( const Magick::Image & img )
-			{
-				this->m_view->tape()->addFrame( this->convert( img ) );
+		for( ImageRef::PosType i = 0, last = m_frames.size(); i < last; ++i )
+		{
+			m_view->tape()->addFrame( { m_frames, i, false } );
 
-				QApplication::processEvents();
-			} );
+			QApplication::processEvents();
+		};
 	}
 	//! Busy state.
 	void busy()
@@ -209,36 +206,9 @@ public:
 void
 MainWindowPrivate::clearView()
 {
-	m_frames.clear();
+	m_view->currentFrame()->clearImage();
 	m_view->tape()->clear();
-	m_view->currentFrame()->setImage( QImage() );
-}
-
-QImage
-MainWindowPrivate::convert( const Magick::Image & img )
-{
-    QImage qimg( static_cast< int > ( img.columns() ),
-		static_cast< int > ( img.rows() ), QImage::Format_RGB888 );
-    const Magick::PixelPacket * pixels;
-    Magick::ColorRGB rgb;
-
-    for( int y = 0; y < qimg.height(); ++y)
-	{
-        pixels = img.getConstPixels( 0, y, static_cast< std::size_t > ( qimg.width() ), 1 );
-
-        for( int x = 0; x < qimg.width(); ++x )
-		{
-            rgb = ( *( pixels + x ) );
-
-            qimg.setPixel( x, y, QColor( static_cast< int> ( 255 * rgb.red() ),
-				static_cast< int > ( 255 * rgb.green() ),
-				static_cast< int > ( 255 * rgb.blue() ) ).rgb());
-        }
-
-		QApplication::processEvents();
-    }
-
-	return qimg;
+	m_frames.clear();
 }
 
 
@@ -456,8 +426,6 @@ MainWindow::openGif()
 
 		QApplication::processEvents();
 
-		d->m_view->currentFrame()->setImage( QImage() );
-
 		try {
 			std::vector< Magick::Image > frames;
 
@@ -584,11 +552,21 @@ MainWindow::saveGif()
 				if( runnable.exception() )
 					std::rethrow_exception( runnable.exception() );
 
+				d->m_view->currentFrame()->clearImage();
 				d->m_view->tape()->removeUnchecked();
 
 				QApplication::processEvents();
 
 				d->m_frames = toSave;
+
+				for( int i = 1; i <= d->m_view->tape()->count(); ++i )
+				{
+					d->m_view->tape()->frame( i )->setImagePos( (ImageRef::PosType) i - 1 );
+					d->m_view->tape()->frame( i )->applyImage();
+				}
+
+				d->m_view->currentFrame()->setImagePos( d->m_view->currentFrame()->image().m_pos );
+				d->m_view->currentFrame()->applyImage();
 
 				d->setModified( false );
 			}
@@ -716,7 +694,7 @@ MainWindow::applyEdit()
 		{
 			const auto rect = d->m_view->cropRect();
 
-			if( !rect.isNull() && rect != d->m_view->currentFrame()->image().rect() )
+			if( !rect.isNull() && rect != d->m_view->currentFrame()->imageRect() )
 			{
 				d->busy();
 

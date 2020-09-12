@@ -27,6 +27,9 @@
 #include <QWidget>
 #include <QScopedPointer>
 
+// GIF editor include.
+#include "frame.hpp"
+
 
 class FrameOnTape;
 
@@ -58,7 +61,7 @@ public:
 	//! \return Count of frames.
 	int count() const;
 	//! Add frame.
-	void addFrame( const QImage & img );
+	void addFrame( const ImageRef & img );
 	//! \return Frame.
 	FrameOnTape * frame( int idx ) const;
 	//! \return Current frame.

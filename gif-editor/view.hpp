@@ -27,6 +27,9 @@
 #include <QWidget>
 #include <QScopedPointer>
 
+// Magick++ include.
+#include <Magick++.h>
+
 
 class Tape;
 class Frame;
@@ -45,7 +48,7 @@ class View final
 	Q_OBJECT
 
 public:
-	View( QWidget * parent = nullptr );
+	explicit View( const std::vector< Magick::Image > & data, QWidget * parent = nullptr );
 	~View() noexcept override;
 
 	//! \return Tape.

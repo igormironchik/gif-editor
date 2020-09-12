@@ -29,6 +29,39 @@
 #include <QMouseEvent>
 #include <QMenu>
 #include <QFileDialog>
+#include <QApplication>
+
+
+//
+// convert
+//
+
+QImage
+convert( const Magick::Image & img )
+{
+    QImage qimg( static_cast< int > ( img.columns() ),
+		static_cast< int > ( img.rows() ), QImage::Format_RGB888 );
+    const Magick::PixelPacket * pixels;
+    Magick::ColorRGB rgb;
+
+    for( int y = 0; y < qimg.height(); ++y)
+	{
+        pixels = img.getConstPixels( 0, y, static_cast< std::size_t > ( qimg.width() ), 1 );
+
+        for( int x = 0; x < qimg.width(); ++x )
+		{
+            rgb = ( *( pixels + x ) );
+
+            qimg.setPixel( x, y, QColor( static_cast< int> ( 255 * rgb.red() ),
+				static_cast< int > ( 255 * rgb.green() ),
+				static_cast< int > ( 255 * rgb.blue() ) ).rgb());
+        }
+
+		QApplication::processEvents();
+    }
+
+	return qimg;
+}
 
 
 //
@@ -37,7 +70,7 @@
 
 class FramePrivate {
 public:
-	FramePrivate( const QImage & img, Frame::ResizeMode mode,
+	FramePrivate( const ImageRef & img, Frame::ResizeMode mode,
 		Frame * parent )
 		:	m_image( img )
 		,	m_mode( mode )
@@ -51,8 +84,8 @@ public:
 	//! Frame widget was resized.
 	void resized();
 
-	//! Image.
-	QImage m_image;
+	//! Image reference.
+	ImageRef m_image;
 	//! Thumbnail.
 	QImage m_thumbnail;
 	//! Resize mode.
@@ -68,23 +101,29 @@ FramePrivate::createThumbnail()
 {
 	m_dirty = false;
 
-	if( m_image.width() > q->width() || m_image.height() > q->height() )
+	if( !m_image.m_isEmpty )
 	{
-		switch( m_mode )
+		if( m_image.m_data.at( m_image.m_pos ).columns() > (ImageRef::PosType) q->width() ||
+			m_image.m_data.at( m_image.m_pos ).rows() > (ImageRef::PosType) q->height() )
 		{
-			case Frame::ResizeMode::FitToSize :
-				m_thumbnail = m_image.scaled( q->width(), q->height(),
-					Qt::KeepAspectRatio, Qt::SmoothTransformation );
-			break;
+			QImage img = convert( m_image.m_data.at( m_image.m_pos ) );
 
-			case Frame::ResizeMode::FitToHeight :
-				m_thumbnail = m_image.scaledToHeight( q->height(),
-					Qt::SmoothTransformation );
-			break;
+			switch( m_mode )
+			{
+				case Frame::ResizeMode::FitToSize :
+					m_thumbnail = img.scaled( q->width(), q->height(),
+						Qt::KeepAspectRatio, Qt::SmoothTransformation );
+				break;
+
+				case Frame::ResizeMode::FitToHeight :
+					m_thumbnail = img.scaledToHeight( q->height(),
+						Qt::SmoothTransformation );
+				break;
+			}
 		}
+		else
+			m_thumbnail = convert( m_image.m_data.at( m_image.m_pos ) );
 	}
-	else
-		m_thumbnail = m_image;
 }
 
 void
@@ -102,7 +141,7 @@ FramePrivate::resized()
 // Frame
 //
 
-Frame::Frame( const QImage & img, ResizeMode mode, QWidget * parent )
+Frame::Frame( const ImageRef & img, ResizeMode mode, QWidget * parent )
 	:	QWidget( parent )
 	,	d( new FramePrivate( img, mode, this ) )
 {
@@ -127,16 +166,34 @@ Frame::~Frame() noexcept
 {
 }
 
-const QImage &
+const ImageRef &
 Frame::image() const
 {
 	return d->m_image;
 }
 
 void
-Frame::setImage( const QImage & img )
+Frame::setImagePos( const ImageRef::PosType & pos )
 {
-	d->m_image = img;
+	d->m_image.m_pos = pos;
+
+	d->resized();
+
+	update();
+}
+
+void
+Frame::clearImage()
+{
+	d->m_image.m_isEmpty = true;
+	d->m_thumbnail = QImage();
+	update();
+}
+
+void
+Frame::applyImage()
+{
+	d->m_image.m_isEmpty = false;
 
 	d->resized();
 
@@ -144,7 +201,7 @@ Frame::setImage( const QImage & img )
 }
 
 QRect
-Frame::imageRect() const
+Frame::thumbnailRect() const
 {
 	const int x = ( width() - d->m_thumbnail.width() ) / 2;
 	const int y = ( height() - d->m_thumbnail.height() ) / 2;
@@ -153,6 +210,19 @@ Frame::imageRect() const
 	r.moveTopLeft( QPoint( x, y ) );
 
 	return r;
+}
+
+QRect
+Frame::imageRect() const
+{
+	if( !d->m_image.m_isEmpty )
+	{
+		const auto & img = d->m_image.m_data.at( d->m_image.m_pos );
+
+		return QRect( 0, 0, img.columns(), img.rows() );
+	}
+	else
+		return {};
 }
 
 QSize
@@ -168,7 +238,7 @@ Frame::paintEvent( QPaintEvent * )
 		d->resized();
 
 	QPainter p( this );
-	p.drawImage( imageRect(), d->m_thumbnail, d->m_thumbnail.rect() );
+	p.drawImage( thumbnailRect(), d->m_thumbnail, d->m_thumbnail.rect() );
 }
 
 void
@@ -206,12 +276,13 @@ Frame::contextMenuRequested( const QPoint & pos )
 			auto fileName = QFileDialog::getSaveFileName( this,
 				tr( "Choose file to save to..." ), QString(), tr( "PNG (*.png)" ) );
 
-			if( !fileName.isEmpty() )
+			if( !fileName.isEmpty() && !this->d->m_image.m_isEmpty )
 			{
 				if( !fileName.endsWith( QStringLiteral( ".png" ), Qt::CaseInsensitive ) )
 					fileName.append( QStringLiteral( ".png" ) );
 
-				this->d->m_image.save( fileName );
+				const auto img = convert( this->d->m_image.m_data.at( this->d->m_image.m_pos ) );
+				img.save( fileName );
 			}
 		} );
 
