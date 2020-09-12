@@ -88,7 +88,7 @@ Tape::addFrame( const ImageRef & img )
 	d->m_frames.append( new FrameOnTape( img, count() + 1, this ) );
 	d->m_layout->addWidget( d->m_frames.back() );
 
-	connect( d->m_frames.back(), &FrameOnTape::clicked,
+	connect( d->m_frames.back(), &FrameOnTape::clicked, this,
 		[this] ( int idx )
 		{
 			if( this->currentFrame() )
