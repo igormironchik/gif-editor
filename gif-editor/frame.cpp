@@ -217,7 +217,7 @@ Frame::imageRect() const
 	{
 		const auto & img = d->m_image.m_data.at( d->m_image.m_pos );
 
-		return QRect( 0, 0, img.columns(), img.rows() );
+		return QRect( 0, 0, (int) img.columns(), (int) img.rows() );
 	}
 	else
 		return {};
