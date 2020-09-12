@@ -56,8 +56,6 @@ convert( const Magick::Image & img )
 				static_cast< int > ( 255 * rgb.green() ),
 				static_cast< int > ( 255 * rgb.blue() ) ).rgb());
         }
-
-		QApplication::processEvents();
     }
 
 	return qimg;
