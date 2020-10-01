@@ -56,7 +56,7 @@ jobs:
       with:
         version: '5.15.1'
         
-    - run: sudo apt install cmake libmagickcore-6.q16-dev
+    - run: sudo apt install cmake libmagickcore-6.q16-dev libmagick++-6.q16-dev
 
     # Autobuild attempts to build any compiled languages  (C/C++, C#, or Java).
     # If this step fails, then you should remove it and run the build manually (see below)
