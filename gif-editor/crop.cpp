@@ -649,7 +649,7 @@ CropFrame::mouseReleaseEvent( QMouseEvent * e )
 }
 
 void
-CropFrame::enterEvent( QEvent * e )
+CropFrame::enterEvent( QEnterEvent * e )
 {
 	if( d->m_started )
 	{

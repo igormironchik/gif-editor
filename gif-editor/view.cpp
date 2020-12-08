@@ -66,7 +66,7 @@ View::View( const std::vector< Magick::Image > & data, QWidget * parent )
 	,	d( new ViewPrivate( data, this ) )
 {
 	QVBoxLayout * layout = new QVBoxLayout( this );
-	layout->setMargin( 0 );
+	layout->setContentsMargins( 0, 0, 0, 0 );
 	layout->addWidget( d->m_currentFrame );
 
 	QScrollArea * scroll = new QScrollArea( this );
