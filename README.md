@@ -22,3 +22,7 @@ There is a book about this project on GitHub
 # Screenshot
 
 ![](gifeditor.png)
+
+# Donate
+
+[Donate with BTC](https://github.com/igormironchik)
