@@ -41,7 +41,7 @@ public:
 		,	m_layout( new QHBoxLayout( parent ) )
 		,	q( parent )
 	{
-		m_layout->setMargin( 5 );
+		m_layout->setContentsMargins( 5, 5, 5, 5 );
 		m_layout->setSpacing( 5 );
 	}
 

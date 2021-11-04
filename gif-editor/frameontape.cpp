@@ -88,11 +88,11 @@ FrameOnTape::FrameOnTape( const ImageRef & img, int counter, QWidget * parent )
 	,	d( new FrameOnTapePrivate( img, counter, this ) )
 {
 	auto vlayout = new QVBoxLayout( this );
-	vlayout->setMargin( 0 );
+	vlayout->setContentsMargins( 0, 0, 0, 0 );
 	vlayout->addWidget( d->m_frame );
 
 	auto hlayout = new QHBoxLayout;
-	hlayout->setMargin( 0 );
+	hlayout->setContentsMargins( 0, 0, 0, 0 );
 	hlayout->addWidget( d->m_checkBox );
 	hlayout->addWidget( d->m_label );
 

@@ -48,8 +48,8 @@ int main( int argc, char ** argv )
 	app.setWindowIcon( appIcon );
 
 	QTranslator appTranslator;
-	appTranslator.load( QStringLiteral( "./tr/gif-editor_" ) + QLocale::system().name() );
-	app.installTranslator( &appTranslator );
+	if( appTranslator.load( QStringLiteral( "./tr/gif-editor_" ) + QLocale::system().name() ) )
+		app.installTranslator( &appTranslator );
 
 	MainWindow w;
 	w.resize( 800, 600 );
