@@ -22,7 +22,3 @@ There is a book about this project on GitHub
 # Screenshot
 
 ![](gifeditor.png)
-
-# Donate
-
-[![](bitcoin-btc-logo-full.png)](https://github.com/igormironchik)
