@@ -68,6 +68,8 @@ private slots:
 	void about();
 	//! About Qt dialog.
 	void aboutQt();
+	//! Licenses.
+	void licenses();
 
 private:
 	Q_DISABLE_COPY( MainWindow )

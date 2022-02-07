@@ -25,7 +25,10 @@ set( SRC main.cpp
 	frameontape.hpp
 	mainwindow.hpp
 	tape.hpp
-	view.hpp )
+	view.hpp
+	license_dialog.hpp
+	license_dialog.cpp
+	license_dialog.ui )
 
 qt6_add_resources( SRC resources.qrc )
 
