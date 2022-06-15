@@ -10,6 +10,14 @@ more resources by editing policy.xml, for example enlarge disk quota.
 <policy domain="resource" name="disk" value="10GiB"/>
 ```
 
+# Getting from Repository
+
+After clone update submodules with the next command:
+
+```
+git submodule update --init --recursive
+```
+
 # Dependencies
 
 Magick++ from ImageMagick 6 is required.
