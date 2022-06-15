@@ -28,7 +28,6 @@
 #include "frameontape.hpp"
 #include "busyindicator.hpp"
 #include "about.hpp"
-#include "license_dialog.hpp"
 
 // Qt include.
 #include <QMenuBar>
@@ -54,6 +53,9 @@
 // C++ include.
 #include <vector>
 #include <algorithm>
+
+// Widgets include.
+#include <Widgets/LicenseDialog>
 
 
 //
@@ -794,7 +796,8 @@ void
 MainWindow::licenses()
 {
 	LicenseDialog msg( this );
-	msg.addLicense( QStringLiteral( "<p><b>The Oxygen Icon Theme</b>\n\n</p>"
+	msg.addLicense( QStringLiteral( "The Oxygen Icon Theme" ),
+		QStringLiteral( "<p><b>The Oxygen Icon Theme</b>\n\n</p>"
 		"<p>Copyright (C) 2007 Nuno Pinheiro &lt;nuno@oxygen-icons.org&gt;\n</p>"
 		"<p>Copyright (C) 2007 David Vignoni &lt;david@icon-king.com&gt;\n</p>"
 		"<p>Copyright (C) 2007 David Miller &lt;miller@oxygen-icons.org&gt;\n</p>"
@@ -1008,7 +1011,8 @@ MainWindow::licenses()
 		"apply, that proxy's public statement of acceptance of any version is "
 		"permanent authorization for you to choose that version for the "
 		"Library.</p>" ) );
-	msg.addLicense( QStringLiteral( "<p><b>ImageMagick License</b>\n\n</p>"
+	msg.addLicense( QStringLiteral( "ImageMagick" ),
+		QStringLiteral( "<p><b>ImageMagick License</b>\n\n</p>"
 		"<p>Terms and Conditions for Use, Reproduction, and Distribution\n</p>"
 		"\n"
 		"<p>The legally binding and authoritative terms and conditions for use, reproduction, "

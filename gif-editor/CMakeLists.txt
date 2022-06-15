@@ -25,10 +25,7 @@ set( SRC main.cpp
 	frameontape.hpp
 	mainwindow.hpp
 	tape.hpp
-	view.hpp
-	license_dialog.hpp
-	license_dialog.cpp
-	license_dialog.ui )
+	view.hpp )
 
 qt6_add_resources( SRC resources.qrc )
 
@@ -36,8 +33,9 @@ if( WIN32 )
 	list( APPEND SRC gif-editor.rc )
 endif()
 
-include_directories( ${ImageMagick_INCLUDE_DIRS} )
+include_directories( ${ImageMagick_INCLUDE_DIRS}
+ ${CMAKE_CURRENT_SOURCE_DIR}/../3rdparty/widgets/include )
 
 add_executable( GIFEditor.App ${SRC} )
 
-target_link_libraries( GIFEditor.App ${ImageMagick_LIBRARIES} Qt6::Widgets Qt6::Gui Qt6::Core )
+target_link_libraries( GIFEditor.App ${ImageMagick_LIBRARIES} widgets Qt6::Widgets Qt6::Gui Qt6::Core )
