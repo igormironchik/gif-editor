@@ -441,13 +441,18 @@ MainWindow::openGif()
 			if( read.exception() )
 				std::rethrow_exception( read.exception() );
 
-			CoalesceGIF coalesce( &d->m_frames, frames.begin(), frames.end() );
-			QThreadPool::globalInstance()->start( &coalesce );
+			if( frames.size() > 1 )
+			{
+				CoalesceGIF coalesce( &d->m_frames, frames.begin(), frames.end() );
+				QThreadPool::globalInstance()->start( &coalesce );
 
-			d->waitThreadPool();
+				d->waitThreadPool();
 
-			if( coalesce.exception() )
-				std::rethrow_exception( coalesce.exception() );
+				if( coalesce.exception() )
+					std::rethrow_exception( coalesce.exception() );
+			}
+			else
+				std::swap( d->m_frames, frames );
 
 			QFileInfo info( fileName );
 
