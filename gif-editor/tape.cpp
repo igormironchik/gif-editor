@@ -85,7 +85,9 @@ Tape::count() const
 void
 Tape::addFrame( const ImageRef & img )
 {
-	d->m_frames.append( new FrameOnTape( img, count() + 1, this ) );
+	d->m_frames.append( new FrameOnTape( img, count() + 1,
+		height() - d->m_layout->contentsMargins().bottom() - d->m_layout->contentsMargins().top(),
+		this ) );
 	connect( d->m_frames.back(), &FrameOnTape::checkTillEnd,
 		this, &Tape::checkTillEnd );
 	d->m_layout->addWidget( d->m_frames.back() );

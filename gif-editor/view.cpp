@@ -30,6 +30,7 @@
 // Qt include.
 #include <QVBoxLayout>
 #include <QScrollArea>
+#include <QApplication>
 
 
 //
@@ -57,6 +58,23 @@ public:
 }; // class ViewPrivate
 
 
+class ScrollArea
+	:	public QScrollArea
+{
+public:
+	ScrollArea( QWidget * parent )
+		:	QScrollArea( parent )
+	{
+	}
+
+	~ScrollArea() override = default;
+
+	void setZeroContentMargins()
+	{
+		QScrollArea::setContentsMargins( 0, 0, 0, 0 );
+	}
+};
+
 //
 // View
 //
@@ -69,17 +87,19 @@ View::View( const std::vector< Magick::Image > & data, QWidget * parent )
 	layout->setContentsMargins( 0, 0, 0, 0 );
 	layout->addWidget( d->m_currentFrame );
 
-	QScrollArea * scroll = new QScrollArea( this );
+	ScrollArea * scroll = new ScrollArea( this );
 	scroll->setVerticalScrollBarPolicy( Qt::ScrollBarAlwaysOff );
 	scroll->setHorizontalScrollBarPolicy( Qt::ScrollBarAlwaysOn );
 	scroll->setMinimumHeight( 150 );
 	scroll->setMaximumHeight( 150 );
 	scroll->setWidgetResizable( true );
+	scroll->setZeroContentMargins();
 
 	d->m_tape = new Tape( scroll );
 	scroll->setWidget( d->m_tape );
 
 	layout->addWidget( scroll );
+	scroll->setFixedHeight( 150 );
 
 	connect( d->m_tape, &Tape::currentFrameChanged,
 		this, &View::frameSelected );

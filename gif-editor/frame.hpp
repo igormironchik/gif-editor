@@ -78,7 +78,7 @@ public:
 		FitToHeight
 	}; // enum class ResizeMode
 
-	Frame( const ImageRef & img, ResizeMode mode, QWidget * parent = nullptr );
+	Frame( const ImageRef & img, ResizeMode mode, QWidget * parent = nullptr, int height = -1 );
 	~Frame() noexcept override;
 
 	//! \return Image.

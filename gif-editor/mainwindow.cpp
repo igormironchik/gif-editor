@@ -45,6 +45,7 @@
 #include <QRunnable>
 #include <QThreadPool>
 #include <QStandardPaths>
+#include <QResizeEvent>
 
 // Magick++ include.
 #include <Magick++.h>
@@ -1187,4 +1188,23 @@ MainWindow::licenses()
 		"    under the License.</p>" ) );
 
 	msg.exec();
+}
+
+void
+MainWindow::resizeEvent( QResizeEvent * e )
+{
+	static bool tapeHeightInit = false;
+
+	if( !tapeHeightInit && d->m_stack->currentWidget() != d->m_view )
+	{
+		tapeHeightInit = true;
+
+		d->m_view->resize( 800, 600 );
+
+		QApplication::processEvents();
+
+		d->m_view->tape()->setMinimumHeight( d->m_view->tape()->height() );
+	}
+
+	e->accept();
 }

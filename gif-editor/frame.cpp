@@ -75,9 +75,9 @@ public:
 	}
 
 	//! Create thumbnail.
-	void createThumbnail();
+	void createThumbnail( int height );
 	//! Frame widget was resized.
-	void resized();
+	void resized( int height = -1 );
 
 	//! Image reference.
 	ImageRef m_image;
@@ -92,7 +92,7 @@ public:
 }; // class FramePrivate
 
 void
-FramePrivate::createThumbnail()
+FramePrivate::createThumbnail( int height )
 {
 	m_dirty = false;
 
@@ -111,7 +111,7 @@ FramePrivate::createThumbnail()
 				break;
 
 				case Frame::ResizeMode::FitToHeight :
-					m_thumbnail = img.scaledToHeight( q->height(),
+					m_thumbnail = img.scaledToHeight( height > 0 ? height : q->height(),
 						Qt::SmoothTransformation );
 				break;
 			}
@@ -122,9 +122,9 @@ FramePrivate::createThumbnail()
 }
 
 void
-FramePrivate::resized()
+FramePrivate::resized( int height )
 {
-	createThumbnail();
+	createThumbnail( height );
 
 	q->updateGeometry();
 
@@ -136,7 +136,7 @@ FramePrivate::resized()
 // Frame
 //
 
-Frame::Frame( const ImageRef & img, ResizeMode mode, QWidget * parent )
+Frame::Frame( const ImageRef & img, ResizeMode mode, QWidget * parent, int height )
 	:	QWidget( parent )
 	,	d( new FramePrivate( img, mode, this ) )
 {
@@ -147,7 +147,10 @@ Frame::Frame( const ImageRef & img, ResizeMode mode, QWidget * parent )
 		break;
 
 		case ResizeMode::FitToHeight :
+		{
 			setSizePolicy( QSizePolicy::Fixed, QSizePolicy::Expanding );
+			d->resized( height );
+		}
 		break;
 	}
 }

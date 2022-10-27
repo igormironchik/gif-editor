@@ -39,18 +39,21 @@
 
 class FrameOnTapePrivate {
 public:
-	FrameOnTapePrivate( const ImageRef & img, int counter, FrameOnTape * parent )
+	FrameOnTapePrivate( const ImageRef & img, int counter, int height, FrameOnTape * parent )
 		:	m_counter( counter )
 		,	m_current( false )
-		,	m_frame( new Frame( img, Frame::ResizeMode::FitToHeight, parent ) )
 		,	m_label( new QLabel( parent ) )
 		,	m_checkBox( new QCheckBox( parent ) )
+		,	m_vlayout( new QVBoxLayout( parent ) )
+		,	m_frame( nullptr )
 		,	q( parent )
 	{
 		m_checkBox->setChecked( true );
 
 		m_label->setAlignment( Qt::AlignVCenter | Qt::AlignRight );
 		m_label->setText( FrameOnTape::tr( "#%1" ).arg( m_counter ) );
+		m_vlayout->setSpacing( 0 );
+		m_vlayout->setContentsMargins( 0, 0, 0, 0 );
 	}
 
 	//! Set current state.
@@ -60,12 +63,14 @@ public:
 	int m_counter;
 	//! Is current?
 	bool m_current;
-	//! Frame.
-	Frame * m_frame;
 	//! Counter label.
 	QLabel * m_label;
 	//! Check box.
 	QCheckBox * m_checkBox;
+	//! Layout.
+	QVBoxLayout * m_vlayout;
+	//! Frame.
+	Frame * m_frame;
 	//! Parent.
 	FrameOnTape * q;
 }; // class FrameOnTapePrivate
@@ -86,24 +91,27 @@ FrameOnTapePrivate::setCurrent( bool on )
 // FrameOnTape
 //
 
-FrameOnTape::FrameOnTape( const ImageRef & img, int counter, QWidget * parent )
+FrameOnTape::FrameOnTape( const ImageRef & img, int counter, int height, QWidget * parent )
 	:	QFrame( parent )
-	,	d( new FrameOnTapePrivate( img, counter, this ) )
+	,	d( new FrameOnTapePrivate( img, counter, height, this ) )
 {
-	auto vlayout = new QVBoxLayout( this );
-	vlayout->setContentsMargins( 0, 0, 0, 0 );
-	vlayout->addWidget( d->m_frame );
+	setLineWidth( 2 );
+	setFrameStyle( QFrame::Panel | QFrame::Raised );
+
+	d->m_frame = new Frame( img, Frame::ResizeMode::FitToHeight, parent,
+		height - qMax( d->m_label->sizeHint().height(), d->m_checkBox->sizeHint().height() ) -
+			frameWidth() * 2 );
+
+	d->m_vlayout->addWidget( d->m_frame );
 
 	auto hlayout = new QHBoxLayout;
 	hlayout->setContentsMargins( 0, 0, 0, 0 );
 	hlayout->addWidget( d->m_checkBox );
 	hlayout->addWidget( d->m_label );
 
-	vlayout->addLayout( hlayout );
+	d->m_vlayout->addLayout( hlayout );
 
 	d->setCurrent( false );
-
-	setLineWidth( 2 );
 
 	setSizePolicy( QSizePolicy::Fixed, QSizePolicy::Expanding );
 

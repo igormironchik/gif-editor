@@ -71,6 +71,9 @@ private slots:
 	//! Licenses.
 	void licenses();
 
+protected:
+	void resizeEvent( QResizeEvent * e ) override;
+
 private:
 	Q_DISABLE_COPY( MainWindow )
 

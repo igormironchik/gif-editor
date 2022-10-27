@@ -52,7 +52,7 @@ signals:
 	void checkTillEnd( int idx, bool on );
 
 public:
-	FrameOnTape( const ImageRef & img, int counter, QWidget * parent = nullptr );
+	FrameOnTape( const ImageRef & img, int counter, int height, QWidget * parent = nullptr );
 	~FrameOnTape() noexcept override;
 
 	//! \return Image.
