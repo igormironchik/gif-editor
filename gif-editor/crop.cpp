@@ -524,7 +524,7 @@ CropFrame::paintEvent( QPaintEvent * )
 		p.drawPath( path );
 	}
 
-	p.setBrush( Qt::transparent );
+	p.setBrush( Qt::lightGray );
 
 	if( d->m_started && !d->m_clicked && !d->m_nothing &&
 		d->m_handle == CropFramePrivate::Handle::Unknown )
