@@ -79,6 +79,9 @@ public:
 	//! Set current flag.
 	void setCurrent( bool on = true );
 
+protected:
+	void contextMenuEvent( QContextMenuEvent * e ) override;
+
 private:
 	Q_DISABLE_COPY( FrameOnTape )
 

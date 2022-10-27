@@ -27,9 +27,6 @@
 #include <QPainter>
 #include <QResizeEvent>
 #include <QMouseEvent>
-#include <QMenu>
-#include <QFileDialog>
-#include <QApplication>
 
 
 //
@@ -153,11 +150,6 @@ Frame::Frame( const ImageRef & img, ResizeMode mode, QWidget * parent )
 			setSizePolicy( QSizePolicy::Fixed, QSizePolicy::Expanding );
 		break;
 	}
-
-	setContextMenuPolicy( Qt::CustomContextMenu );
-
-	connect( this, &QWidget::customContextMenuRequested,
-		this, &Frame::contextMenuRequested );
 }
 
 Frame::~Frame() noexcept
@@ -260,39 +252,4 @@ Frame::mouseReleaseEvent( QMouseEvent * e )
 	}
 	else
 		e->ignore();
-}
-
-void
-Frame::contextMenuRequested( const QPoint & pos )
-{
-	QMenu menu( this );
-
-	menu.addAction( QIcon( QStringLiteral( ":/img/document-save-as.png" ) ),
-		tr( "Save Current Frame" ),
-		[this] ()
-		{
-			auto fileName = QFileDialog::getSaveFileName( this,
-				tr( "Choose file to save to..." ), QString(), tr( "PNG (*.png)" ) );
-
-			if( !fileName.isEmpty() && !this->d->m_image.m_isEmpty )
-			{
-				if( !fileName.endsWith( QStringLiteral( ".png" ), Qt::CaseInsensitive ) )
-					fileName.append( QStringLiteral( ".png" ) );
-
-				const auto img = convert( this->d->m_image.m_data.at( this->d->m_image.m_pos ) );
-				img.save( fileName );
-			}
-		} );
-
-	menu.addSeparator();
-
-	menu.addAction( QIcon( QStringLiteral( ":/img/list-remove.png" ) ),
-		tr( "Uncheck till end" ),
-		[this] () { emit this->checkTillEnd( false ); } );
-
-	menu.addAction( QIcon( QStringLiteral( ":/img/list-add.png" ) ),
-		tr( "Check till end" ),
-		[this] () { emit this->checkTillEnd( true ); } );
-
-	menu.exec( mapToGlobal( pos ) );
 }

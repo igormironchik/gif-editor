@@ -68,8 +68,6 @@ signals:
 	void clicked();
 	//! Resized.
 	void resized();
-	//! Check/uncheck till end action activated.
-	void checkTillEnd( bool on );
 
 public:
 	//! Resize mode.
@@ -97,10 +95,6 @@ public:
 	QRect imageRect() const;
 
 	QSize sizeHint() const override;
-
-private slots:
-	//! Context menu requested.
-	void contextMenuRequested( const QPoint & pos );
 
 protected:
 	void paintEvent( QPaintEvent * ) override;

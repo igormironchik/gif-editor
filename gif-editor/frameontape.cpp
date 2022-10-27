@@ -30,6 +30,7 @@
 #include <QCheckBox>
 #include <QMenu>
 #include <QContextMenuEvent>
+#include <QFileDialog>
 
 
 //
@@ -115,8 +116,6 @@ FrameOnTape::FrameOnTape( const ImageRef & img, int counter, QWidget * parent )
 
 			emit this->clicked( this->d->m_counter );
 		} );
-	connect( d->m_frame, &Frame::checkTillEnd, this,
-		[this] ( bool on ) { emit this->checkTillEnd( this->d->m_counter, on ); } );
 }
 
 FrameOnTape::~FrameOnTape() noexcept
@@ -183,4 +182,40 @@ void
 FrameOnTape::setCurrent( bool on )
 {
 	d->setCurrent( on );
+}
+
+void
+FrameOnTape::contextMenuEvent( QContextMenuEvent * e )
+{
+	QMenu menu( this );
+
+	menu.addAction( QIcon( QStringLiteral( ":/img/document-save-as.png" ) ),
+		tr( "Save Current Frame" ),
+		[this] ()
+		{
+			auto fileName = QFileDialog::getSaveFileName( this,
+				tr( "Choose file to save to..." ), QString(), tr( "PNG (*.png)" ) );
+
+			if( !fileName.isEmpty() && !this->d->m_frame->image().m_isEmpty )
+			{
+				if( !fileName.endsWith( QStringLiteral( ".png" ), Qt::CaseInsensitive ) )
+					fileName.append( QStringLiteral( ".png" ) );
+
+				const auto img = convert( this->d->m_frame->image().m_data.at(
+					this->d->m_frame->image().m_pos ) );
+				img.save( fileName );
+			}
+		} );
+
+	menu.addSeparator();
+
+	menu.addAction( QIcon( QStringLiteral( ":/img/list-remove.png" ) ),
+		tr( "Uncheck till end" ),
+		[this] () { emit this->checkTillEnd( this->d->m_counter, false ); } );
+
+	menu.addAction( QIcon( QStringLiteral( ":/img/list-add.png" ) ),
+		tr( "Check till end" ),
+		[this] () { emit this->checkTillEnd( this->d->m_counter, true ); } );
+
+	menu.exec( e->globalPos() );
 }
