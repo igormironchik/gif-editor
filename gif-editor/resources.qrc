@@ -12,6 +12,8 @@
         <file>img/document-save-as.png</file>
         <file>img/document-save.png</file>
         <file>img/transform-crop.png</file>
+        <file>img/list-add.png</file>
+        <file>img/list-remove.png</file>
         <file>img/qt.png</file>
     </qresource>
 </RCC>

@@ -75,6 +75,10 @@ public:
 	//! Remove unchecked frames.
 	void removeUnchecked();
 
+private slots:
+	//! Check/uncheck till end action activated.
+	void checkTillEnd( int idx, bool on );
+
 private:
 	Q_DISABLE_COPY( Tape )
 

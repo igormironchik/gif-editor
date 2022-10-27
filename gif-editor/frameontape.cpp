@@ -28,6 +28,8 @@
 #include <QVBoxLayout>
 #include <QLabel>
 #include <QCheckBox>
+#include <QMenu>
+#include <QContextMenuEvent>
 
 
 //
@@ -113,6 +115,8 @@ FrameOnTape::FrameOnTape( const ImageRef & img, int counter, QWidget * parent )
 
 			emit this->clicked( this->d->m_counter );
 		} );
+	connect( d->m_frame, &Frame::checkTillEnd, this,
+		[this] ( bool on ) { emit this->checkTillEnd( this->d->m_counter, on ); } );
 }
 
 FrameOnTape::~FrameOnTape() noexcept

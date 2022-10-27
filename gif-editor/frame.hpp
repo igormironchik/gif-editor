@@ -68,6 +68,8 @@ signals:
 	void clicked();
 	//! Resized.
 	void resized();
+	//! Check/uncheck till end action activated.
+	void checkTillEnd( bool on );
 
 public:
 	//! Resize mode.

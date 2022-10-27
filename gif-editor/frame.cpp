@@ -284,5 +284,15 @@ Frame::contextMenuRequested( const QPoint & pos )
 			}
 		} );
 
+	menu.addSeparator();
+
+	menu.addAction( QIcon( QStringLiteral( ":/img/list-remove.png" ) ),
+		tr( "Uncheck till end" ),
+		[this] () { emit this->checkTillEnd( false ); } );
+
+	menu.addAction( QIcon( QStringLiteral( ":/img/list-add.png" ) ),
+		tr( "Check till end" ),
+		[this] () { emit this->checkTillEnd( true ); } );
+
 	menu.exec( mapToGlobal( pos ) );
 }

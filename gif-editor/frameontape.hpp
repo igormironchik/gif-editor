@@ -48,6 +48,8 @@ signals:
 	void clicked( int idx );
 	//! Checked.
 	void checked( int idx, bool on );
+	//! Check/uncheck till end action activated.
+	void checkTillEnd( int idx, bool on );
 
 public:
 	FrameOnTape( const ImageRef & img, int counter, QWidget * parent = nullptr );
