@@ -68,6 +68,7 @@ public:
 	MainWindowPrivate( MainWindow * parent )
 		:	m_editMode( EditMode::Unknow )
 		,	m_busyFlag( false )
+		,	m_quitFlag( false )
 		,	m_stack( new QStackedWidget( parent ) )
 		,	m_busy( new BusyIndicator( m_stack ) )
 		,	m_view( new View( m_frames, m_stack ) )
@@ -179,6 +180,8 @@ public:
 	EditMode m_editMode;
 	//! Busy flag.
 	bool m_busyFlag;
+	//! Quit flag.
+	bool m_quitFlag;
 	//! Stacked widget.
 	QStackedWidget * m_stack;
 	//! Busy indicator.
@@ -629,7 +632,7 @@ MainWindow::saveGifAs()
 void
 MainWindow::quit()
 {
-	if( !d->m_busyFlag )
+	if( !d->m_busyFlag && !d->m_quitFlag )
 	{
 		if( isWindowModified() )
 		{
@@ -639,6 +642,8 @@ MainWindow::quit()
 			if( btn == QMessageBox::Yes )
 				saveGif();
 		}
+
+		d->m_quitFlag = true;
 
 		QApplication::quit();
 	}
