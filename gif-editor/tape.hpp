@@ -72,8 +72,6 @@ public:
 	void clear();
 	//! Remove unchecked frames.
 	void removeUnchecked();
-
-protected:
 	//! Remove frame.
 	void removeFrame( int idx );
 

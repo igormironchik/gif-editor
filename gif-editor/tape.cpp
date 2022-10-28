@@ -197,6 +197,10 @@ Tape::clear()
 	}
 
 	d->m_frames.clear();
+
+	d->m_currentFrame = nullptr;
+
+	emit currentFrameChanged( 0 );
 }
 
 void
