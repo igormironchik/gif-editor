@@ -150,8 +150,6 @@ Tape::removeFrame( int idx )
 {
 	if( idx <= count() )
 	{
-		d->clearImages();
-
 		d->m_layout->removeWidget( d->m_frames.at( idx - 1 ) );
 		d->m_frames.at( idx - 1 )->deleteLater();
 
@@ -192,12 +190,13 @@ Tape::clear()
 {
 	const int c = count();
 
-	for( int i = 1; i <= c; ++i )
+	for( int i = 0; i < c; ++i )
 	{
-		removeFrame( 1 );
-
-		QApplication::processEvents();
+		d->m_layout->removeWidget( d->m_frames.at( i ) );
+		d->m_frames.at( i )->deleteLater();
 	}
+
+	d->m_frames.clear();
 }
 
 void

@@ -68,12 +68,14 @@ public:
 	FrameOnTape * currentFrame() const;
 	//! Set current frame.
 	void setCurrentFrame( int idx );
-	//! Remove frame.
-	void removeFrame( int idx );
 	//! Clear.
 	void clear();
 	//! Remove unchecked frames.
 	void removeUnchecked();
+
+protected:
+	//! Remove frame.
+	void removeFrame( int idx );
 
 private slots:
 	//! Check/uncheck till end action activated.

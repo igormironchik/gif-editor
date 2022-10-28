@@ -396,6 +396,42 @@ private:
 	std::vector< Magick::Image >::iterator m_last;
 }; // class CoalesceGIF
 
+
+class CropGIF final
+	:	public RunnableWithException
+{
+public:
+	CropGIF( std::vector< Magick::Image > * container,
+		const QRect & rect )
+		:	m_container( container )
+		,	m_rect( rect )
+	{
+		setAutoDelete( false );
+	}
+
+	void run() override
+	{
+		try {
+			std::for_each( m_container->begin(), m_container->end(),
+				[this] ( auto & frame )
+				{
+					frame.crop( Magick::Geometry( this->m_rect.width(), this->m_rect.height(),
+						this->m_rect.x(), this->m_rect.y() ) );
+
+					frame.repage();
+				} );
+		}
+		catch( ... )
+		{
+			m_eptr = std::current_exception();
+		}
+	}
+
+private:
+	std::vector< Magick::Image > * m_container;
+	QRect m_rect;
+}; // class CropGIF
+
 } /* namespace anonymous */
 
 void
@@ -726,22 +762,17 @@ MainWindow::applyEdit()
 				try {
 					auto tmpFrames = d->m_frames;
 
-					std::for_each( tmpFrames.begin(), tmpFrames.end(),
-						[&rect] ( auto & frame )
-						{
-							frame.crop( Magick::Geometry( rect.width(), rect.height(),
-								rect.x(), rect.y() ) );
+					CropGIF crop( &tmpFrames, rect );
+					QThreadPool::globalInstance()->start( &crop );
 
-							QApplication::processEvents();
+					d->waitThreadPool();
 
-							frame.repage();
-
-							QApplication::processEvents();
-						} );
+					if( crop.exception() )
+						std::rethrow_exception( crop.exception() );
 
 					const auto current = d->m_view->tape()->currentFrame()->counter();
 					d->m_view->tape()->clear();
-					d->m_frames = tmpFrames;
+					std::swap( d->m_frames, tmpFrames );
 
 					QApplication::processEvents();
 
