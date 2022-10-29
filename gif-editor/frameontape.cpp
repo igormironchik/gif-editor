@@ -197,25 +197,28 @@ FrameOnTape::contextMenuEvent( QContextMenuEvent * e )
 {
 	QMenu menu( this );
 
-	menu.addAction( QIcon( QStringLiteral( ":/img/document-save-as.png" ) ),
-		tr( "Save this frame" ),
-		[this] ()
-		{
-			auto fileName = QFileDialog::getSaveFileName( this,
-				tr( "Choose file to save to..." ), QString(), tr( "PNG (*.png)" ) );
-
-			if( !fileName.isEmpty() && !this->d->m_frame->image().m_isEmpty )
+	if( !d->m_frame->image().m_isEmpty )
+	{
+		menu.addAction( QIcon( QStringLiteral( ":/img/document-save-as.png" ) ),
+			tr( "Save this frame" ),
+			[this] ()
 			{
-				if( !fileName.endsWith( QStringLiteral( ".png" ), Qt::CaseInsensitive ) )
-					fileName.append( QStringLiteral( ".png" ) );
+				auto fileName = QFileDialog::getSaveFileName( this,
+					tr( "Choose file to save to..." ), QString(), tr( "PNG (*.png)" ) );
 
-				const auto img = convert( this->d->m_frame->image().m_data.at(
-					this->d->m_frame->image().m_pos ) );
-				img.save( fileName );
-			}
-		} );
+				if( !fileName.isEmpty() )
+				{
+					if( !fileName.endsWith( QStringLiteral( ".png" ), Qt::CaseInsensitive ) )
+						fileName.append( QStringLiteral( ".png" ) );
 
-	menu.addSeparator();
+					const auto img = convert( this->d->m_frame->image().m_data.at(
+						this->d->m_frame->image().m_pos ) );
+					img.save( fileName );
+				}
+			} );
+
+		menu.addSeparator();
+	}
 
 	menu.addAction( QIcon( QStringLiteral( ":/img/list-remove.png" ) ),
 		tr( "Uncheck till end" ),
