@@ -559,7 +559,11 @@ public:
 	void run() override
 	{
 		try {
-			Magick::writeImages( m_first, m_last, m_fileName );
+			std::vector< Magick::Image > tmp;
+
+			Magick::optimizeImageLayers( &tmp, m_first, m_last );
+
+			Magick::writeImages( tmp.begin(), tmp.end(), m_fileName );
 		}
 		catch( ... )
 		{
@@ -613,6 +617,7 @@ MainWindow::saveGif()
 				{
 					d->m_view->tape()->frame( i )->setImagePos( (ImageRef::PosType) i - 1 );
 					d->m_view->tape()->frame( i )->applyImage();
+					QApplication::processEvents();
 				}
 
 				d->m_view->currentFrame()->setImagePos( d->m_view->currentFrame()->image().m_pos );
