@@ -198,7 +198,7 @@ FrameOnTape::contextMenuEvent( QContextMenuEvent * e )
 	QMenu menu( this );
 
 	menu.addAction( QIcon( QStringLiteral( ":/img/document-save-as.png" ) ),
-		tr( "Save Current Frame" ),
+		tr( "Save this frame" ),
 		[this] ()
 		{
 			auto fileName = QFileDialog::getSaveFileName( this,
