@@ -283,7 +283,8 @@ MainWindow::MainWindow()
 		this, &MainWindow::about );
 	help->addAction( QIcon( QStringLiteral( ":/img/qt.png" ) ), tr( "About Qt" ),
 		this, &MainWindow::aboutQt );
-	help->addAction( tr( "Licenses" ), this, &MainWindow::licenses );
+	help->addAction( QIcon( QStringLiteral( ":/img/bookmarks-organize.png" ) ),
+		tr( "Licenses" ), this, &MainWindow::licenses );
 
 	d->m_stack->addWidget( d->m_about );
 	d->m_stack->addWidget( d->m_view );
