@@ -96,7 +96,7 @@ FrameOnTape::FrameOnTape( const ImageRef & img, int counter, int height, QWidget
 	,	d( new FrameOnTapePrivate( img, counter, height, this ) )
 {
 	setLineWidth( 2 );
-	setFrameStyle( QFrame::Panel | QFrame::Raised );
+	d->setCurrent( false );
 
 	d->m_frame = new Frame( img, Frame::ResizeMode::FitToHeight, parent,
 		height - qMax( d->m_label->sizeHint().height(), d->m_checkBox->sizeHint().height() ) -
