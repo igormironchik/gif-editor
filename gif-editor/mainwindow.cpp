@@ -230,15 +230,15 @@ MainWindow::MainWindow()
 
 	auto file = menuBar()->addMenu( tr( "&File" ) );
 	d->m_open = file->addAction( QIcon( QStringLiteral( ":/img/document-open.png" ) ), tr( "Open" ),
-		this, &MainWindow::openGif, tr( "Ctrl+O" ) );
+		tr( "Ctrl+O" ), this, &MainWindow::openGif );
 	file->addSeparator();
 	d->m_save = file->addAction( QIcon( QStringLiteral( ":/img/document-save.png" ) ), tr( "Save" ),
-		this, &MainWindow::saveGif, tr( "Ctrl+S" ) );
+		tr( "Ctrl+S" ), this, &MainWindow::saveGif );
 	d->m_saveAs = file->addAction( QIcon( QStringLiteral( ":/img/document-save-as.png" ) ), tr( "Save As" ),
-		this, &MainWindow::saveGifAs );
+		tr( "Ctrl+Q" ), this, &MainWindow::saveGifAs );
 	file->addSeparator();
 	d->m_quit = file->addAction( QIcon( QStringLiteral( ":/img/application-exit.png" ) ), tr( "Quit" ),
-		this, &MainWindow::quit, tr( "Ctrl+Q" ) );
+		this, &MainWindow::quit );
 
 	d->m_save->setEnabled( false );
 	d->m_saveAs->setEnabled( false );
