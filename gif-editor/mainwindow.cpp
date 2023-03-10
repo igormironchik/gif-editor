@@ -235,10 +235,10 @@ MainWindow::MainWindow()
 	d->m_save = file->addAction( QIcon( QStringLiteral( ":/img/document-save.png" ) ), tr( "Save" ),
 		tr( "Ctrl+S" ), this, &MainWindow::saveGif );
 	d->m_saveAs = file->addAction( QIcon( QStringLiteral( ":/img/document-save-as.png" ) ), tr( "Save As" ),
-		tr( "Ctrl+Q" ), this, &MainWindow::saveGifAs );
+		this, &MainWindow::saveGifAs );
 	file->addSeparator();
 	d->m_quit = file->addAction( QIcon( QStringLiteral( ":/img/application-exit.png" ) ), tr( "Quit" ),
-		this, &MainWindow::quit );
+		tr( "Ctrl+Q" ), this, &MainWindow::quit );
 
 	d->m_save->setEnabled( false );
 	d->m_saveAs->setEnabled( false );
