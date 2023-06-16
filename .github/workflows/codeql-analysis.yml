@@ -44,7 +44,7 @@ jobs:
     - name: Install Qt
       uses: jurplel/install-qt-action@v3
       with:
-        version: '6.2.0'
+        version: '6.5.1'
         
     - run: sudo apt install libmagickcore-6.q16-dev libmagick++-6.q16-dev
 
