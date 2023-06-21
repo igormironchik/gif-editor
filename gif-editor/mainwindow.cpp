@@ -1297,12 +1297,18 @@ void
 MainWindow::showNextFrame()
 {
 	if( d->m_view->tape()->currentFrame()->counter() + 1 <= d->m_view->tape()->count() )
+	{
+		const auto & img = d->m_view->tape()->frame(
+			d->m_view->tape()->currentFrame()->counter() + 1 )->image();
+		d->m_playTimer->start( img.m_data.at( img.m_pos ).animationDelay() * 10 );
 		d->m_view->tape()->setCurrentFrame( d->m_view->tape()->currentFrame()->counter() + 1 );
+	}
 	else
+	{
+		const auto & img = d->m_view->tape()->frame( 1 )->image();
+		d->m_playTimer->start( img.m_data.at( img.m_pos ).animationDelay() * 10 );
 		d->m_view->tape()->setCurrentFrame( 1 );
-
-	const auto & img = d->m_view->tape()->currentFrame()->image();
-	d->m_playTimer->start( img.m_data.at( img.m_pos ).animationDelay() * 10 );
+	}
 
 	d->m_view->scrollTo( d->m_view->tape()->currentFrame()->counter() );
 }
