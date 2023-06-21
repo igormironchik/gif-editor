@@ -158,7 +158,7 @@ public:
 	//! Wait for thread pool.
 	void waitThreadPool()
 	{
-		while( !QThreadPool::globalInstance()->waitForDone( 100 / 6 ) )
+		while( !QThreadPool::globalInstance()->waitForDone( 10 ) )
 			QApplication::processEvents();
 	}
 	//! Set modified state.
@@ -591,9 +591,9 @@ MainWindow::saveGif()
 		{
 			if( d->m_view->tape()->frame( i + 1 )->isChecked() )
 				toSave.push_back( d->m_frames.at( static_cast< std::size_t > ( i ) ) );
-		}
 
-		QApplication::processEvents();
+			QApplication::processEvents();
+		}
 
 		if( !toSave.empty() )
 		{
