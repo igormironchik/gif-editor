@@ -16,5 +16,7 @@
         <file>img/list-remove.png</file>
         <file>img/qt.png</file>
         <file>img/bookmarks-organize.png</file>
+        <file>img/media-playback-start.png</file>
+        <file>img/media-playback-stop.png</file>
     </qresource>
 </RCC>

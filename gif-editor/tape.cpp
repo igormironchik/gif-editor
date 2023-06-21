@@ -41,8 +41,9 @@ public:
 		,	m_layout( new QHBoxLayout( parent ) )
 		,	q( parent )
 	{
-		m_layout->setContentsMargins( 5, 5, 5, 5 );
-		m_layout->setSpacing( 5 );
+		m_layout->setContentsMargins( q->spacing(), q->spacing(),
+			q->spacing(), q->spacing() );
+		m_layout->setSpacing( q->spacing() );
 	}
 
 	void clearImages()
@@ -232,4 +233,20 @@ Tape::checkTillEnd( int idx, bool on )
 {
 	for( int i = idx; i <= count(); ++i )
 		frame( i )->setChecked( on );
+}
+
+int
+Tape::xOfFrame( int idx ) const
+{
+	if( idx >= 1 && idx <= count() )
+		return d->m_layout->contentsMargins().left() + ( idx - 1 ) * d->m_currentFrame->width() +
+			( idx - 1 ) * d->m_layout->spacing();
+	else
+		return -1;
+}
+
+int
+Tape::spacing() const
+{
+	return 5;
 }

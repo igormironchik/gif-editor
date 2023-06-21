@@ -31,32 +31,12 @@
 #include <QVBoxLayout>
 #include <QScrollArea>
 #include <QApplication>
+#include <QScrollBar>
 
 
 //
-// ViewPrivate
+// ScrollArea
 //
-
-class ViewPrivate {
-public:
-	ViewPrivate( const std::vector< Magick::Image > & data, View * parent )
-		:	m_tape( nullptr )
-		,	m_currentFrame( new Frame( { data, 0, true }, Frame::ResizeMode::FitToSize, parent ) )
-		,	m_crop( nullptr )
-		,	q( parent )
-	{
-	}
-
-	//! Tape.
-	Tape * m_tape;
-	//! Current frame.
-	Frame * m_currentFrame;
-	//! Crop.
-	CropFrame * m_crop;
-	//! Parent.
-	View * q;
-}; // class ViewPrivate
-
 
 class ScrollArea
 	:	public QScrollArea
@@ -73,7 +53,41 @@ public:
 	{
 		QScrollArea::setContentsMargins( 0, 0, 0, 0 );
 	}
+
+	void scrollContentsTo( int x )
+	{
+		horizontalScrollBar()->setValue( x );
+	}
 };
+
+
+//
+// ViewPrivate
+//
+
+class ViewPrivate {
+public:
+	ViewPrivate( const std::vector< Magick::Image > & data, View * parent )
+		:	m_tape( nullptr )
+		,	m_currentFrame( new Frame( { data, 0, true }, Frame::ResizeMode::FitToSize, parent ) )
+		,	m_crop( nullptr )
+		,	m_scroll( nullptr )
+		,	q( parent )
+	{
+	}
+
+	//! Tape.
+	Tape * m_tape;
+	//! Current frame.
+	Frame * m_currentFrame;
+	//! Crop.
+	CropFrame * m_crop;
+	//! Scroll area for tape.
+	ScrollArea * m_scroll;
+	//! Parent.
+	View * q;
+}; // class ViewPrivate
+
 
 //
 // View
@@ -87,19 +101,19 @@ View::View( const std::vector< Magick::Image > & data, QWidget * parent )
 	layout->setContentsMargins( 0, 0, 0, 0 );
 	layout->addWidget( d->m_currentFrame );
 
-	ScrollArea * scroll = new ScrollArea( this );
-	scroll->setVerticalScrollBarPolicy( Qt::ScrollBarAlwaysOff );
-	scroll->setHorizontalScrollBarPolicy( Qt::ScrollBarAlwaysOn );
-	scroll->setMinimumHeight( 150 );
-	scroll->setMaximumHeight( 150 );
-	scroll->setWidgetResizable( true );
-	scroll->setZeroContentMargins();
+	d->m_scroll = new ScrollArea( this );
+	d->m_scroll->setVerticalScrollBarPolicy( Qt::ScrollBarAlwaysOff );
+	d->m_scroll->setHorizontalScrollBarPolicy( Qt::ScrollBarAlwaysOn );
+	d->m_scroll->setMinimumHeight( 150 );
+	d->m_scroll->setMaximumHeight( 150 );
+	d->m_scroll->setWidgetResizable( true );
+	d->m_scroll->setZeroContentMargins();
 
-	d->m_tape = new Tape( scroll );
-	scroll->setWidget( d->m_tape );
+	d->m_tape = new Tape( d->m_scroll );
+	d->m_scroll->setWidget( d->m_tape );
 
-	layout->addWidget( scroll );
-	scroll->setFixedHeight( 150 );
+	layout->addWidget( d->m_scroll );
+	d->m_scroll->setFixedHeight( 150 );
 
 	connect( d->m_tape, &Tape::currentFrameChanged,
 		this, &View::frameSelected );
@@ -165,4 +179,16 @@ View::frameSelected( int idx )
 	}
 	else
 		d->m_currentFrame->clearImage();
+}
+
+void
+View::scrollTo( int idx )
+{
+	const auto x = d->m_scroll->horizontalScrollBar()->sliderPosition();
+	const auto viewWidth = d->m_scroll->viewport()->width();
+	const auto frameX = d->m_tape->xOfFrame( idx );
+	const auto frameWidth = d->m_tape->currentFrame()->width();
+	const auto spacing = d->m_tape->spacing();
+
+	d->m_scroll->scrollContentsTo( ( frameX + frameWidth + spacing ) - viewWidth );
 }

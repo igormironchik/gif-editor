@@ -46,6 +46,7 @@
 #include <QThreadPool>
 #include <QStandardPaths>
 #include <QResizeEvent>
+#include <QTimer>
 
 // Magick++ include.
 #include <Magick++.h>
@@ -69,11 +70,13 @@ public:
 		:	m_editMode( EditMode::Unknow )
 		,	m_busyFlag( false )
 		,	m_quitFlag( false )
+		,	m_playing( false )
 		,	m_stack( new QStackedWidget( parent ) )
 		,	m_busy( new BusyIndicator( m_stack ) )
 		,	m_view( new View( m_frames, m_stack ) )
 		,	m_about( new About( parent ) )
 		,	m_crop( nullptr )
+		,	m_playStop( nullptr )
 		,	m_save( nullptr )
 		,	m_saveAs( nullptr )
 		,	m_open( nullptr )
@@ -103,6 +106,8 @@ public:
 
 		m_applyEdit->setEnabled( !on );
 		m_cancelEdit->setEnabled( !on );
+
+		m_playStop->setEnabled( on );
 	}
 	//! Initialize tape.
 	void initTape()
@@ -182,6 +187,8 @@ public:
 	bool m_busyFlag;
 	//! Quit flag.
 	bool m_quitFlag;
+	//! Play/stop flag.
+	bool m_playing;
 	//! Stacked widget.
 	QStackedWidget * m_stack;
 	//! Busy indicator.
@@ -192,6 +199,8 @@ public:
 	About * m_about;
 	//! Crop action.
 	QAction * m_crop;
+	//! Play/stop action.
+	QAction * m_playStop;
 	//! Save action.
 	QAction * m_save;
 	//! Save as action.
@@ -206,6 +215,8 @@ public:
 	QAction * m_quit;
 	//! Edit toolbar.
 	QToolBar * m_editToolBar;
+	//! Play timer.
+	QTimer * m_playTimer;
 	//! Parent.
 	MainWindow * q;
 }; // class MainWindowPrivate
@@ -251,6 +262,10 @@ MainWindow::MainWindow()
 	d->m_crop->setChecked( false );
 	d->m_crop->setEnabled( false );
 
+	d->m_playStop = new QAction( QIcon( QStringLiteral( ":/img/media-playback-start.png" ) ),
+		tr( "Play" ), this );
+	d->m_playStop->setEnabled( false );
+
 	d->m_applyEdit = new QAction( this );
 	d->m_applyEdit->setShortcut( Qt::Key_Return );
 	d->m_applyEdit->setShortcutContext( Qt::ApplicationShortcut );
@@ -264,14 +279,20 @@ MainWindow::MainWindow()
 	addAction( d->m_applyEdit );
 	addAction( d->m_cancelEdit );
 
+	d->m_playTimer = new QTimer( this );
+
 	connect( d->m_crop, &QAction::triggered, this, &MainWindow::crop );
+	connect( d->m_playStop, &QAction::triggered, this, &MainWindow::playStop );
 	connect( d->m_applyEdit, &QAction::triggered, this, &MainWindow::applyEdit );
 	connect( d->m_cancelEdit, &QAction::triggered, this, &MainWindow::cancelEdit );
+	connect( d->m_playTimer, &QTimer::timeout, this, &MainWindow::showNextFrame );
 
 	auto edit = menuBar()->addMenu( tr( "&Edit" ) );
 	edit->addAction( d->m_crop );
 
-	d->m_editToolBar = new QToolBar( tr( "Edit" ), this );
+	d->m_editToolBar = new QToolBar( tr( "Tools" ), this );
+	d->m_editToolBar->addAction( d->m_playStop );
+	d->m_editToolBar->addSeparator();
 	d->m_editToolBar->addAction( d->m_crop );
 
 	addToolBar( Qt::LeftToolBarArea, d->m_editToolBar );
@@ -507,6 +528,7 @@ MainWindow::openGif()
 				d->m_view->tape()->setCurrentFrame( 1 );
 
 			d->m_crop->setEnabled( true );
+			d->m_playStop->setEnabled( true );
 			d->m_saveAs->setEnabled( true );
 
 			d->ready();
@@ -1249,4 +1271,38 @@ MainWindow::resizeEvent( QResizeEvent * e )
 	}
 
 	e->accept();
+}
+
+void
+MainWindow::playStop()
+{
+	if( d->m_playing )
+	{
+		d->m_playTimer->stop();
+		d->m_playStop->setText( tr( "Play" ) );
+		d->m_playStop->setIcon( QIcon( ":/img/media-playback-start.png" ) );
+	}
+	else
+	{
+		d->m_playStop->setText( tr( "Stop" ) );
+		d->m_playStop->setIcon( QIcon( ":/img/media-playback-stop.png" ) );
+		const auto & img = d->m_view->tape()->currentFrame()->image();
+		d->m_playTimer->start( img.m_data.at( img.m_pos ).animationDelay() * 10 );
+	}
+
+	d->m_playing = !d->m_playing;
+}
+
+void
+MainWindow::showNextFrame()
+{
+	if( d->m_view->tape()->currentFrame()->counter() + 1 <= d->m_view->tape()->count() )
+		d->m_view->tape()->setCurrentFrame( d->m_view->tape()->currentFrame()->counter() + 1 );
+	else
+		d->m_view->tape()->setCurrentFrame( 1 );
+
+	const auto & img = d->m_view->tape()->currentFrame()->image();
+	d->m_playTimer->start( img.m_data.at( img.m_pos ).animationDelay() * 10 );
+
+	d->m_view->scrollTo( d->m_view->tape()->currentFrame()->counter() );
 }

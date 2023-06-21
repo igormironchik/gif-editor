@@ -70,6 +70,10 @@ private slots:
 	void aboutQt();
 	//! Licenses.
 	void licenses();
+	//! Play/stop.
+	void playStop();
+	//! Show next frame.
+	void showNextFrame();
 
 protected:
 	void resizeEvent( QResizeEvent * e ) override;

@@ -74,6 +74,10 @@ public:
 	void removeUnchecked();
 	//! Remove frame.
 	void removeFrame( int idx );
+	//! \return X coordinate of left border of the given frame.
+	int xOfFrame( int idx ) const;
+	//! \return Layout spacing.
+	int spacing() const;
 
 private slots:
 	//! Check/uncheck till end action activated.

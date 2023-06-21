@@ -64,6 +64,8 @@ public slots:
 	void startCrop();
 	//! Stop crop.
 	void stopCrop();
+	//! Scroll to frame.
+	void scrollTo( int idx );
 
 private slots:
 	//! Frame selected.
