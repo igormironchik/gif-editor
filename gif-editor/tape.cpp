@@ -92,6 +92,8 @@ Tape::addFrame( const ImageRef & img )
 		this, &Tape::checkTillEnd );
 	d->m_layout->addWidget( d->m_frames.back() );
 
+	QApplication::processEvents();
+
 	connect( d->m_frames.back(), &FrameOnTape::clicked, this,
 		[this] ( int idx )
 		{
@@ -194,6 +196,7 @@ Tape::clear()
 	{
 		d->m_layout->removeWidget( d->m_frames.at( i ) );
 		d->m_frames.at( i )->deleteLater();
+		QApplication::processEvents();
 	}
 
 	d->m_frames.clear();

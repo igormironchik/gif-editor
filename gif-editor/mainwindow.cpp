@@ -158,7 +158,7 @@ public:
 	//! Wait for thread pool.
 	void waitThreadPool()
 	{
-		while( !QThreadPool::globalInstance()->waitForDone( 10 ) )
+		while( !QThreadPool::globalInstance()->waitForDone( 5 ) )
 			QApplication::processEvents();
 	}
 	//! Set modified state.
