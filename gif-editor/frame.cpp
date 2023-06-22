@@ -151,6 +151,10 @@ FramePrivate::createThumbnail( int height )
 
 	if( !m_image.m_isEmpty )
 	{
+		m_height = q->height();
+		m_width = q->width();
+		m_desiredHeight = height;
+
 		if( m_mode == Frame::ResizeMode::FitToHeight )
 		{
 			ThumbnailCreator c( m_image.m_data.at( m_image.m_pos ), q->width(), q->height(),
