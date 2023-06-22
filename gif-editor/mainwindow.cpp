@@ -474,7 +474,7 @@ MainWindow::openGif()
 			const auto btn = QMessageBox::question( this,
 				tr( "GIF was changed..." ),
 				tr( "\"%1\" was changed.\n"
-					"Do you want to save it?" ) );
+					"Do you want to save it?" ).arg( fileName ) );
 
 			if( btn == QMessageBox::Yes )
 				saveGif();
@@ -1296,19 +1296,37 @@ MainWindow::playStop()
 void
 MainWindow::showNextFrame()
 {
-	if( d->m_view->tape()->currentFrame()->counter() + 1 <= d->m_view->tape()->count() )
+	bool frameSet = false;
+
+	for( int i = d->m_view->tape()->currentFrame()->counter() + 1;
+		i <= d->m_view->tape()->count(); ++i )
 	{
-		const auto & img = d->m_view->tape()->frame(
-			d->m_view->tape()->currentFrame()->counter() + 1 )->image();
-		d->m_playTimer->start( img.m_data.at( img.m_pos ).animationDelay() * 10 );
-		d->m_view->tape()->setCurrentFrame( d->m_view->tape()->currentFrame()->counter() + 1 );
-	}
-	else
-	{
-		const auto & img = d->m_view->tape()->frame( 1 )->image();
-		d->m_playTimer->start( img.m_data.at( img.m_pos ).animationDelay() * 10 );
-		d->m_view->tape()->setCurrentFrame( 1 );
+		if( d->m_view->tape()->frame( i )->isChecked() )
+		{
+			const auto & img = d->m_view->tape()->frame( i )->image();
+			d->m_playTimer->start( img.m_data.at( img.m_pos ).animationDelay() * 10 );
+			d->m_view->tape()->setCurrentFrame( i );
+			frameSet = true;
+			break;
+		}
 	}
 
-	d->m_view->scrollTo( d->m_view->tape()->currentFrame()->counter() );
+	if( !frameSet )
+	{
+		for( int i = 1; i < d->m_view->tape()->currentFrame()->counter(); ++i )
+		{
+			if( d->m_view->tape()->frame( i )->isChecked() )
+			{
+				const auto & img = d->m_view->tape()->frame( i )->image();
+				d->m_playTimer->start( img.m_data.at( img.m_pos ).animationDelay() * 10 );
+				d->m_view->tape()->setCurrentFrame( i );
+				frameSet = true;
+				break;
+			}
+		}
+	}
+
+
+	if( frameSet )
+		d->m_view->scrollTo( d->m_view->tape()->currentFrame()->counter() );
 }
