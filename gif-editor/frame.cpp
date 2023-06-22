@@ -27,6 +27,9 @@
 #include <QPainter>
 #include <QResizeEvent>
 #include <QMouseEvent>
+#include <QThreadPool>
+#include <QApplication>
+#include <QRunnable>
 
 
 //
@@ -87,9 +90,59 @@ public:
 	Frame::ResizeMode m_mode;
 	//! Dirty frame. We need to resize the image to actual size before drawing.
 	bool m_dirty;
+	//! Width.
+	int m_width = 0;
+	//! Height.
+	int m_height = 0;
+	//! Desired height.
+	int m_desiredHeight = -1;
 	//! Parent.
 	Frame * q;
 }; // class FramePrivate
+
+class ThumbnailCreator final
+	:	public QRunnable
+{
+public:
+	ThumbnailCreator( Magick::Image img, int width, int height, int desiredHeight,
+		Frame::ResizeMode mode )
+		:	m_img( img )
+		,	m_width( width )
+		,	m_height( height )
+		,	m_desiredHeight( desiredHeight )
+		,	m_mode( mode )
+	{
+		setAutoDelete( false );
+	}
+
+	const QImage & image() const
+	{
+		return m_thumbnail;
+	}
+
+	void run() override
+	{
+		if( m_img.columns() > (ImageRef::PosType) m_width ||
+			m_img.rows() > (ImageRef::PosType) m_height )
+		{
+			QImage qimg = convert( m_img );
+
+			m_thumbnail = qimg.scaledToHeight(
+				m_desiredHeight > 0 ? m_desiredHeight : m_height,
+				Qt::SmoothTransformation );
+		}
+		else
+			m_thumbnail = convert( m_img );
+	}
+
+private:
+	Magick::Image m_img;
+	int m_width;
+	int m_height;
+	int m_desiredHeight;
+	Frame::ResizeMode m_mode;
+	QImage m_thumbnail;
+};
 
 void
 FramePrivate::createThumbnail( int height )
@@ -98,37 +151,46 @@ FramePrivate::createThumbnail( int height )
 
 	if( !m_image.m_isEmpty )
 	{
-		if( m_image.m_data.at( m_image.m_pos ).columns() > (ImageRef::PosType) q->width() ||
-			m_image.m_data.at( m_image.m_pos ).rows() > (ImageRef::PosType) q->height() )
+		if( m_mode == Frame::ResizeMode::FitToHeight )
 		{
-			QImage img = convert( m_image.m_data.at( m_image.m_pos ) );
+			ThumbnailCreator c( m_image.m_data.at( m_image.m_pos ), q->width(), q->height(),
+				height, m_mode );
 
-			switch( m_mode )
-			{
-				case Frame::ResizeMode::FitToSize :
-					m_thumbnail = img.scaled( q->width(), q->height(),
-						Qt::KeepAspectRatio, Qt::SmoothTransformation );
-				break;
+			QThreadPool::globalInstance()->start( &c );
 
-				case Frame::ResizeMode::FitToHeight :
-					m_thumbnail = img.scaledToHeight( height > 0 ? height : q->height(),
-						Qt::SmoothTransformation );
-				break;
-			}
+			while( !QThreadPool::globalInstance()->waitForDone( 5 ) )
+				QApplication::processEvents();
+
+			m_thumbnail = c.image();
 		}
 		else
-			m_thumbnail = convert( m_image.m_data.at( m_image.m_pos ) );
+		{
+			if( m_image.m_data.at( m_image.m_pos ).columns() > (ImageRef::PosType) q->width() ||
+				m_image.m_data.at( m_image.m_pos ).rows() > (ImageRef::PosType) q->height() )
+			{
+				QImage qimg = convert( m_image.m_data.at( m_image.m_pos ) );
+
+				m_thumbnail = qimg.scaled( q->width(), q->height(),
+					Qt::KeepAspectRatio, Qt::SmoothTransformation );
+			}
+			else
+				m_thumbnail = convert( m_image.m_data.at( m_image.m_pos ) );
+		}
 	}
 }
 
 void
 FramePrivate::resized( int height )
 {
-	createThumbnail( height );
+	if( m_dirty || height != m_desiredHeight ||
+		q->width() != m_width || q->height() != m_height )
+	{
+		createThumbnail( height );
 
-	q->updateGeometry();
+		q->updateGeometry();
 
-	emit q->resized();
+		emit q->resized();
+	}
 }
 
 
@@ -169,10 +231,9 @@ void
 Frame::setImagePos( const ImageRef::PosType & pos )
 {
 	d->m_image.m_pos = pos;
-
-	d->resized();
-
-	update();
+	d->m_desiredHeight = -1;
+	d->m_width = 0;
+	d->m_height = 0;
 }
 
 void
@@ -180,6 +241,9 @@ Frame::clearImage()
 {
 	d->m_image.m_isEmpty = true;
 	d->m_thumbnail = QImage();
+	d->m_desiredHeight = -1;
+	d->m_width = 0;
+	d->m_height = 0;
 	update();
 }
 
