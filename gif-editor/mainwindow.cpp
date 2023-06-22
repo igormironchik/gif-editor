@@ -501,6 +501,7 @@ public:
 		{
 			auto gif = gif_create( m_container.first().first.width(),
 				m_container.first().first.height() );
+			gif->repetitions = 0;
 
 			for( const auto & p : m_container )
 			{
