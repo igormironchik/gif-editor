@@ -48,16 +48,16 @@
 #include <QResizeEvent>
 #include <QTimer>
 
-// Magick++ include.
-#include <Magick++.h>
-#include <Magick++/Exception.h>
-
 // C++ include.
 #include <vector>
 #include <algorithm>
 
 // Widgets include.
 #include <Widgets/LicenseDialog>
+
+// bitmap include.
+#include <bmp.h>
+#include <gif.h>
 
 
 //
@@ -112,7 +112,7 @@ public:
 	//! Initialize tape.
 	void initTape()
 	{
-		for( ImageRef::PosType i = 0, last = m_frames.size(); i < last; ++i )
+		for( int i = 0, last = m_frames.size(); i < last; ++i )
 		{
 			m_view->tape()->addFrame( { m_frames, i, false } );
 
@@ -180,7 +180,7 @@ public:
 	//! Current file name.
 	QString m_currentGif;
 	//! Frames.
-	std::vector< Magick::Image > m_frames;
+	QVector< QPair< QImage, int > > m_frames;
 	//! Edit mode.
 	EditMode m_editMode;
 	//! Busy flag.
@@ -342,28 +342,18 @@ MainWindow::closeEvent( QCloseEvent * e )
 
 namespace /* anonymous */ {
 
-class RunnableWithException
-	:	public QRunnable
+inline QImage toQImage( Bitmap * b )
 {
-public:
-	std::exception_ptr exception() const
-	{
-		return m_eptr;
-	}
-
-	~RunnableWithException() noexcept override = default;
-
-protected:
-	std::exception_ptr m_eptr;
-}; // class RunnableWithException
+	return QImage( bm_raw_data( b ), bm_width( b ), bm_height( b ), QImage::Format_ARGB32 ).copy();
+}
 
 
 class ReadGIF final
-	:	public RunnableWithException
+	:	public QRunnable
 {
 public:
-	ReadGIF( std::vector< Magick::Image > * container,
-		const std::string & fileName )
+	ReadGIF( QVector< QPair< QImage, int > > & container,
+		const QString & fileName )
 		:	m_container( container )
 		,	m_fileName( fileName )
 	{
@@ -372,58 +362,31 @@ public:
 
 	void run() override
 	{
-		try {
-			Magick::readImages( m_container, m_fileName );
-		}
-		catch( ... )
+		auto gif = gif_load( m_fileName.toLocal8Bit().data() );
+
+		auto frame = gif->frames;
+
+		for( int i = 0; i < gif->n; ++i )
 		{
-			m_eptr = std::current_exception();
+			m_container.push_back( { toQImage( frame->image ), frame->delay * 10 } );
+
+			++frame;
 		}
+
+		gif_free( gif );
 	}
 
 private:
-	std::vector< Magick::Image > * m_container;
-	std::string m_fileName;
+	QVector< QPair< QImage, int > > & m_container;
+	QString m_fileName;
 }; // class ReadGIF
 
 
-class CoalesceGIF final
-	:	public RunnableWithException
-{
-public:
-	CoalesceGIF( std::vector< Magick::Image > * container,
-		std::vector< Magick::Image >::iterator first,
-		std::vector< Magick::Image >::iterator last )
-		:	m_container( container )
-		,	m_first( first )
-		,	m_last( last )
-	{
-		setAutoDelete( false );
-	}
-
-	void run() override
-	{
-		try {
-			Magick::coalesceImages( m_container, m_first, m_last );
-		}
-		catch( ... )
-		{
-			m_eptr = std::current_exception();
-		}
-	}
-
-private:
-	std::vector< Magick::Image > * m_container;
-	std::vector< Magick::Image >::iterator m_first;
-	std::vector< Magick::Image >::iterator m_last;
-}; // class CoalesceGIF
-
-
 class CropGIF final
-	:	public RunnableWithException
+	:	public QRunnable
 {
 public:
-	CropGIF( std::vector< Magick::Image > * container,
+	CropGIF( QVector< QPair< QImage, int > > & container,
 		const QRect & rect )
 		:	m_container( container )
 		,	m_rect( rect )
@@ -433,24 +396,12 @@ public:
 
 	void run() override
 	{
-		try {
-			std::for_each( m_container->begin(), m_container->end(),
-				[this] ( auto & frame )
-				{
-					frame.crop( Magick::Geometry( this->m_rect.width(), this->m_rect.height(),
-						this->m_rect.x(), this->m_rect.y() ) );
-
-					frame.repage();
-				} );
-		}
-		catch( ... )
-		{
-			m_eptr = std::current_exception();
-		}
+		for( int i = 0; i < m_container.size(); ++i )
+			m_container[ i ].first = m_container[ i ].first.copy( m_rect );
 	}
 
 private:
-	std::vector< Magick::Image > * m_container;
+	QVector< QPair< QImage, int > > & m_container;
 	QRect m_rect;
 }; // class CropGIF
 
@@ -493,28 +444,10 @@ MainWindow::openGif()
 		QApplication::processEvents();
 
 		try {
-			std::vector< Magick::Image > frames;
-
-			ReadGIF read( &frames, fileName.toStdString() );
+			ReadGIF read( d->m_frames, fileName );
 			QThreadPool::globalInstance()->start( &read );
 
 			d->waitThreadPool();
-
-			if( read.exception() )
-				std::rethrow_exception( read.exception() );
-
-			if( frames.size() > 1 )
-			{
-				CoalesceGIF coalesce( &d->m_frames, frames.begin(), frames.end() );
-				QThreadPool::globalInstance()->start( &coalesce );
-
-				d->waitThreadPool();
-
-				if( coalesce.exception() )
-					std::rethrow_exception( coalesce.exception() );
-			}
-			else
-				std::swap( d->m_frames, frames );
 
 			QFileInfo info( fileName );
 
@@ -524,7 +457,7 @@ MainWindow::openGif()
 
 			d->initTape();
 
-			if( !d->m_frames.empty() )
+			if( !d->m_frames.isEmpty() )
 				d->m_view->tape()->setCurrentFrame( 1 );
 
 			d->m_crop->setEnabled( true );
@@ -532,19 +465,6 @@ MainWindow::openGif()
 			d->m_saveAs->setEnabled( true );
 
 			d->ready();
-		}
-		catch( const Magick::Exception & x )
-		{
-			d->clearView();
-
-			d->ready();
-
-			d->m_editToolBar->hide();
-
-			d->m_stack->setCurrentWidget( d->m_about );
-
-			QMessageBox::warning( this, tr( "Failed to open GIF..." ),
-				QString::fromLocal8Bit( x.what() ) );
 		}
 		catch( const std::bad_alloc & )
 		{
@@ -565,14 +485,11 @@ MainWindow::openGif()
 namespace /* anonymous */ {
 
 class WriteGIF final
-	:	public RunnableWithException
+	:	public QRunnable
 {
 public:
-	WriteGIF( std::vector< Magick::Image >::iterator first,
-		std::vector< Magick::Image >::iterator last,
-		const std::string & fileName )
-		:	m_first( first )
-		,	m_last( last )
+	WriteGIF( const QVector< QPair< QImage, int > > & container, const QString & fileName )
+		:	m_container( container )
 		,	m_fileName( fileName )
 	{
 		setAutoDelete( false );
@@ -580,23 +497,29 @@ public:
 
 	void run() override
 	{
-		try {
-			std::vector< Magick::Image > tmp;
-
-			Magick::optimizeImageLayers( &tmp, m_first, m_last );
-
-			Magick::writeImages( tmp.begin(), tmp.end(), m_fileName );
-		}
-		catch( ... )
+		if( !m_container.isEmpty() )
 		{
-			m_eptr = std::current_exception();
+			auto gif = gif_create( m_container.first().first.width(),
+				m_container.first().first.height() );
+
+			for( const auto & p : m_container )
+			{
+				auto b = bm_create( p.first.width(), p.first.height() );
+				memcpy( bm_raw_data( b ), p.first.bits(), p.first.sizeInBytes() );
+				auto frame = gif_add_frame( gif, b );
+				frame->delay = p.second / 10;
+				bm_free( b );
+			}
+
+			gif_save( gif, m_fileName.toLocal8Bit().data() );
+
+			gif_free( gif );
 		}
 	}
 
 private:
-	std::vector< Magick::Image >::iterator m_first;
-	std::vector< Magick::Image >::iterator m_last;
-	std::string m_fileName;
+	const QVector< QPair< QImage, int > > & m_container;
+	QString m_fileName;
 }; // class WriteGIF
 
 } /* namespace anonymous */
@@ -607,53 +530,42 @@ MainWindow::saveGif()
 	try {
 		d->busy();
 
-		std::vector< Magick::Image > toSave;
+		QVector< QPair< QImage, int > > toSave;
 
 		for( int i = 0; i < d->m_view->tape()->count(); ++i )
 		{
 			if( d->m_view->tape()->frame( i + 1 )->isChecked() )
-				toSave.push_back( d->m_frames.at( static_cast< std::size_t > ( i ) ) );
+				toSave.push_back( d->m_frames.at( i ) );
 
 			QApplication::processEvents();
 		}
 
 		if( !toSave.empty() )
 		{
-			try {
-				WriteGIF runnable( toSave.begin(), toSave.end(), d->m_currentGif.toStdString() );
-				QThreadPool::globalInstance()->start( &runnable );
+			d->m_frames = toSave;
+			toSave.clear();
 
-				d->waitThreadPool();
+			WriteGIF runnable( d->m_frames, d->m_currentGif );
+			QThreadPool::globalInstance()->start( &runnable );
 
-				if( runnable.exception() )
-					std::rethrow_exception( runnable.exception() );
+			d->waitThreadPool();
 
-				d->m_view->currentFrame()->clearImage();
-				d->m_view->tape()->removeUnchecked();
+			d->m_view->currentFrame()->clearImage();
+			d->m_view->tape()->removeUnchecked();
 
-				QApplication::processEvents();
+			QApplication::processEvents();
 
-				d->m_frames = toSave;
-
-				for( int i = 1; i <= d->m_view->tape()->count(); ++i )
-				{
-					d->m_view->tape()->frame( i )->setImagePos( (ImageRef::PosType) i - 1 );
-					d->m_view->tape()->frame( i )->applyImage();
-					QApplication::processEvents();
-				}
-
-				d->m_view->currentFrame()->setImagePos( d->m_view->currentFrame()->image().m_pos );
-				d->m_view->currentFrame()->applyImage();
-
-				d->setModified( false );
-			}
-			catch( const Magick::Exception & x )
+			for( int i = 1; i <= d->m_view->tape()->count(); ++i )
 			{
-				d->ready();
-
-				QMessageBox::warning( this, tr( "Failed to save GIF..." ),
-					QString::fromLocal8Bit( x.what() ) );
+				d->m_view->tape()->frame( i )->setImagePos( i - 1 );
+				d->m_view->tape()->frame( i )->applyImage();
+				QApplication::processEvents();
 			}
+
+			d->m_view->currentFrame()->setImagePos( d->m_view->currentFrame()->image().m_pos );
+			d->m_view->currentFrame()->applyImage();
+
+			d->setModified( false );
 		}
 		else
 		{
@@ -788,19 +700,13 @@ MainWindow::applyEdit()
 				QApplication::processEvents();
 
 				try {
-					auto tmpFrames = d->m_frames;
-
-					CropGIF crop( &tmpFrames, rect );
+					CropGIF crop( d->m_frames, rect );
 					QThreadPool::globalInstance()->start( &crop );
 
 					d->waitThreadPool();
 
-					if( crop.exception() )
-						std::rethrow_exception( crop.exception() );
-
 					const auto current = d->m_view->tape()->currentFrame()->counter();
 					d->m_view->tape()->clear();
-					std::swap( d->m_frames, tmpFrames );
 
 					QApplication::processEvents();
 
@@ -816,15 +722,6 @@ MainWindow::applyEdit()
 					cancelEdit();
 
 					d->ready();
-				}
-				catch( const Magick::Exception & x )
-				{
-					d->ready();
-
-					cancelEdit();
-
-					QMessageBox::warning( this, tr( "Failed to crop GIF..." ),
-						QString::fromLocal8Bit( x.what() ) );
 				}
 				catch( const std::bad_alloc & )
 				{
@@ -1287,7 +1184,7 @@ MainWindow::playStop()
 		d->m_playStop->setText( tr( "Stop" ) );
 		d->m_playStop->setIcon( QIcon( ":/img/media-playback-stop.png" ) );
 		const auto & img = d->m_view->tape()->currentFrame()->image();
-		d->m_playTimer->start( img.m_data.at( img.m_pos ).animationDelay() * 10 );
+		d->m_playTimer->start( img.m_data.at( img.m_pos ).second );
 	}
 
 	d->m_playing = !d->m_playing;
@@ -1304,7 +1201,7 @@ MainWindow::showNextFrame()
 		if( d->m_view->tape()->frame( i )->isChecked() )
 		{
 			const auto & img = d->m_view->tape()->frame( i )->image();
-			d->m_playTimer->start( img.m_data.at( img.m_pos ).animationDelay() * 10 );
+			d->m_playTimer->start( img.m_data.at( img.m_pos ).second );
 			d->m_view->tape()->setCurrentFrame( i );
 			frameSet = true;
 			break;
@@ -1318,7 +1215,7 @@ MainWindow::showNextFrame()
 			if( d->m_view->tape()->frame( i )->isChecked() )
 			{
 				const auto & img = d->m_view->tape()->frame( i )->image();
-				d->m_playTimer->start( img.m_data.at( img.m_pos ).animationDelay() * 10 );
+				d->m_playTimer->start( img.m_data.at( img.m_pos ).second );
 				d->m_view->tape()->setCurrentFrame( i );
 				frameSet = true;
 				break;

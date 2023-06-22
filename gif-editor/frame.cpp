@@ -33,36 +33,6 @@
 
 
 //
-// convert
-//
-
-QImage
-convert( const Magick::Image & img )
-{
-    QImage qimg( static_cast< int > ( img.columns() ),
-		static_cast< int > ( img.rows() ), QImage::Format_RGB888 );
-    const Magick::PixelPacket * pixels;
-    Magick::ColorRGB rgb;
-
-    for( int y = 0; y < qimg.height(); ++y)
-	{
-        pixels = img.getConstPixels( 0, y, static_cast< std::size_t > ( qimg.width() ), 1 );
-
-        for( int x = 0; x < qimg.width(); ++x )
-		{
-            rgb = ( *( pixels + x ) );
-
-            qimg.setPixel( x, y, QColor( static_cast< int> ( 255 * rgb.red() ),
-				static_cast< int > ( 255 * rgb.green() ),
-				static_cast< int > ( 255 * rgb.blue() ) ).rgb());
-        }
-    }
-
-	return qimg;
-}
-
-
-//
 // FramePrivate
 //
 
@@ -104,7 +74,7 @@ class ThumbnailCreator final
 	:	public QRunnable
 {
 public:
-	ThumbnailCreator( Magick::Image img, int width, int height, int desiredHeight,
+	ThumbnailCreator( QImage img, int width, int height, int desiredHeight,
 		Frame::ResizeMode mode )
 		:	m_img( img )
 		,	m_width( width )
@@ -122,21 +92,18 @@ public:
 
 	void run() override
 	{
-		if( m_img.columns() > (ImageRef::PosType) m_width ||
-			m_img.rows() > (ImageRef::PosType) m_height )
+		if( m_img.width() > m_width || m_img.height() > m_height )
 		{
-			QImage qimg = convert( m_img );
-
-			m_thumbnail = qimg.scaledToHeight(
+			m_thumbnail = m_img.scaledToHeight(
 				m_desiredHeight > 0 ? m_desiredHeight : m_height,
 				Qt::SmoothTransformation );
 		}
 		else
-			m_thumbnail = convert( m_img );
+			m_thumbnail = m_img;
 	}
 
 private:
-	Magick::Image m_img;
+	QImage m_img;
 	int m_width;
 	int m_height;
 	int m_desiredHeight;
@@ -157,7 +124,7 @@ FramePrivate::createThumbnail( int height )
 
 		if( m_mode == Frame::ResizeMode::FitToHeight )
 		{
-			ThumbnailCreator c( m_image.m_data.at( m_image.m_pos ), q->width(), q->height(),
+			ThumbnailCreator c( m_image.m_data.at( m_image.m_pos ).first, q->width(), q->height(),
 				height, m_mode );
 
 			QThreadPool::globalInstance()->start( &c );
@@ -169,16 +136,15 @@ FramePrivate::createThumbnail( int height )
 		}
 		else
 		{
-			if( m_image.m_data.at( m_image.m_pos ).columns() > (ImageRef::PosType) q->width() ||
-				m_image.m_data.at( m_image.m_pos ).rows() > (ImageRef::PosType) q->height() )
-			{
-				QImage qimg = convert( m_image.m_data.at( m_image.m_pos ) );
+			const auto & tmp = m_image.m_data.at( m_image.m_pos ).first;
 
-				m_thumbnail = qimg.scaled( q->width(), q->height(),
+			if( tmp.width() > q->width() || tmp.height() > q->height() )
+			{
+				m_thumbnail = tmp.scaled( q->width(), q->height(),
 					Qt::KeepAspectRatio, Qt::SmoothTransformation );
 			}
 			else
-				m_thumbnail = convert( m_image.m_data.at( m_image.m_pos ) );
+				m_thumbnail = tmp;
 		}
 	}
 }
@@ -278,9 +244,9 @@ Frame::imageRect() const
 {
 	if( !d->m_image.m_isEmpty )
 	{
-		const auto & img = d->m_image.m_data.at( d->m_image.m_pos );
+		const auto & img = d->m_image.m_data.at( d->m_image.m_pos ).first;
 
-		return QRect( 0, 0, (int) img.columns(), (int) img.rows() );
+		return QRect( 0, 0, img.width(), (int) img.height() );
 	}
 	else
 		return {};

@@ -67,7 +67,7 @@ public:
 
 class ViewPrivate {
 public:
-	ViewPrivate( const std::vector< Magick::Image > & data, View * parent )
+	ViewPrivate( const QVector< QPair< QImage, int > > & data, View * parent )
 		:	m_tape( nullptr )
 		,	m_currentFrame( new Frame( { data, 0, true }, Frame::ResizeMode::FitToSize, parent ) )
 		,	m_crop( nullptr )
@@ -93,7 +93,7 @@ public:
 // View
 //
 
-View::View( const std::vector< Magick::Image > & data, QWidget * parent )
+View::View( const QVector< QPair< QImage, int > > & data, QWidget * parent )
 	:	QWidget( parent )
 	,	d( new ViewPrivate( data, this ) )
 {
