@@ -180,7 +180,7 @@ public:
 	//! Current file name.
 	QString m_currentGif;
 	//! Frames.
-	std::vector< QPair< QImage, size_t > > m_frames;
+	Frames m_frames;
 	//! Edit mode.
 	EditMode m_editMode;
 	//! Busy flag.
@@ -392,7 +392,7 @@ class ReadGIF final
 	:	public RunnableWithException
 {
 public:
-	ReadGIF( std::vector< QPair< QImage, size_t > > * container,
+	ReadGIF( Frames * container,
 		const QString & fileName )
 		:	m_container( container )
 		,	m_fileName( fileName )
@@ -422,7 +422,7 @@ public:
 	}
 
 private:
-	std::vector< QPair< QImage, size_t > > * m_container;
+	Frames * m_container;
 	QString m_fileName;
 }; // class ReadGIF
 
@@ -431,7 +431,7 @@ class CropGIF final
 	:	public RunnableWithException
 {
 public:
-	CropGIF( std::vector< QPair< QImage, size_t > > * container,
+	CropGIF( Frames * container,
 		const QRect & rect )
 		:	m_container( container )
 		,	m_rect( rect )
@@ -452,7 +452,7 @@ public:
 	}
 
 private:
-	std::vector< QPair< QImage, size_t > > * m_container;
+	Frames * m_container;
 	QRect m_rect;
 }; // class CropGIF
 
@@ -495,7 +495,7 @@ MainWindow::openGif()
 		QApplication::processEvents();
 
 		try {
-			std::vector< QPair< QImage, size_t > > frames;
+			Frames frames;
 
 			ReadGIF read( &frames, fileName );
 			QThreadPool::globalInstance()->start( &read );
@@ -592,7 +592,7 @@ class WriteGIF final
 	:	public RunnableWithException
 {
 public:
-	WriteGIF( const std::vector< QPair< QImage, size_t > > & container,
+	WriteGIF( const Frames & container,
 		const QString & fileName )
 		:	m_container( container )
 		,	m_fileName( fileName )
@@ -626,7 +626,7 @@ public:
 	}
 
 private:
-	const std::vector< QPair< QImage, size_t > > & m_container;
+	const Frames & m_container;
 	QString m_fileName;
 }; // class WriteGIF
 
@@ -638,7 +638,7 @@ MainWindow::saveGif()
 	try {
 		d->busy();
 
-		std::vector< QPair< QImage, size_t > > toSave;
+		Frames toSave;
 
 		for( int i = 0; i < d->m_view->tape()->count(); ++i )
 		{

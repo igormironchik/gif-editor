@@ -27,8 +27,9 @@
 #include <QWidget>
 #include <QScopedPointer>
 
-// Magick++ include.
-#include <Magick++.h>
+
+//! Tyepe of storage of frames.
+using Frames = std::vector< QPair< QImage, size_t > >;
 
 
 //
@@ -37,8 +38,8 @@
 
 //! Reference to full image.
 struct ImageRef final {
-	using PosType = std::vector< QPair< QImage, size_t > >::size_type;
-	const std::vector< QPair< QImage, size_t > > & m_data;
+	using PosType = Frames::size_type;
+	const Frames & m_data;
 	PosType m_pos;
 	bool m_isEmpty;
 }; // struct ImageRef

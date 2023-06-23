@@ -27,12 +27,11 @@
 #include <QWidget>
 #include <QScopedPointer>
 
-// Magick++ include.
-#include <Magick++.h>
+// gif-editor include.
+#include "frame.hpp"
 
 
 class Tape;
-class Frame;
 
 
 //
@@ -48,7 +47,7 @@ class View final
 	Q_OBJECT
 
 public:
-	explicit View( const std::vector< QPair< QImage, size_t > > & data, QWidget * parent = nullptr );
+	explicit View( const Frames & data, QWidget * parent = nullptr );
 	~View() noexcept override;
 
 	//! \return Tape.
