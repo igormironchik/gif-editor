@@ -177,6 +177,21 @@ public:
 			m_save->setEnabled( false );
 	}
 
+	//! Check if frame checked and select it if so.
+	bool ifFrameCheckedSelectIt( int idx )
+	{
+		if( m_view->tape()->frame( idx )->isChecked() )
+		{
+			const auto & img = m_view->tape()->frame( idx )->image();
+			m_playTimer->start( static_cast< int >( img.m_data.at( img.m_pos ).second * 10 ) );
+			m_view->tape()->setCurrentFrame( idx );
+
+			return true;
+		}
+
+		return false;
+	}
+
 	//! Current file name.
 	QString m_currentGif;
 	//! Frames.
@@ -1332,28 +1347,20 @@ MainWindow::showNextFrame()
 	for( int i = d->m_view->tape()->currentFrame()->counter() + 1;
 		i <= d->m_view->tape()->count(); ++i )
 	{
-		if( d->m_view->tape()->frame( i )->isChecked() )
-		{
-			const auto & img = d->m_view->tape()->frame( i )->image();
-			d->m_playTimer->start( static_cast< int >( img.m_data.at( img.m_pos ).second * 10 ) );
-			d->m_view->tape()->setCurrentFrame( i );
-			frameSet = true;
+		frameSet = d->ifFrameCheckedSelectIt( i );
+
+		if( frameSet )
 			break;
-		}
 	}
 
 	if( !frameSet )
 	{
 		for( int i = 1; i < d->m_view->tape()->currentFrame()->counter(); ++i )
 		{
-			if( d->m_view->tape()->frame( i )->isChecked() )
-			{
-				const auto & img = d->m_view->tape()->frame( i )->image();
-				d->m_playTimer->start( static_cast< int >( img.m_data.at( img.m_pos ).second * 10 ) );
-				d->m_view->tape()->setCurrentFrame( i );
-				frameSet = true;
+			frameSet = d->ifFrameCheckedSelectIt( i );
+
+			if( frameSet )
 				break;
-			}
 		}
 	}
 
