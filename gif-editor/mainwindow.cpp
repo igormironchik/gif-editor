@@ -898,7 +898,7 @@ MainWindow::about()
 	QMessageBox::about( this, tr( "About GIF editor" ),
 		tr( "GIF editor.\n\n"
 			"Author - Igor Mironchik (igor.mironchik at gmail dot com).\n\n"
-			"Copyright (c) 2018 Igor Mironchik.\n\n"
+			"Copyright (c) 2018-2023 Igor Mironchik.\n\n"
 			"Licensed under GNU GPL 3.0." ) );
 }
 
