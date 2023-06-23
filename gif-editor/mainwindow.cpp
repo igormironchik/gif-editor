@@ -428,7 +428,8 @@ public:
 			}
 
 			for( const auto & frame : c )
-				m_container->push_back( { convert( frame ), frame.animationDelay() } );
+				m_container->push_back( { convert( frame ),
+					frame.animationDelay() > 0 ? frame.animationDelay() : 10  } );
 		}
 		catch( ... )
 		{
@@ -1345,25 +1346,11 @@ MainWindow::showNextFrame()
 	bool frameSet = false;
 
 	for( int i = d->m_view->tape()->currentFrame()->counter() + 1;
-		i <= d->m_view->tape()->count(); ++i )
-	{
-		frameSet = d->ifFrameCheckedSelectIt( i );
-
-		if( frameSet )
-			break;
-	}
-
-	if( !frameSet )
-	{
-		for( int i = 1; i < d->m_view->tape()->currentFrame()->counter(); ++i )
-		{
+		i <= d->m_view->tape()->count() && !frameSet; ++i )
 			frameSet = d->ifFrameCheckedSelectIt( i );
 
-			if( frameSet )
-				break;
-		}
-	}
-
+	for( int i = 1; i < d->m_view->tape()->currentFrame()->counter() && !frameSet; ++i )
+		frameSet = d->ifFrameCheckedSelectIt( i );
 
 	if( frameSet )
 		d->m_view->scrollTo( d->m_view->tape()->currentFrame()->counter() );
