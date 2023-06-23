@@ -37,8 +37,8 @@
 
 //! Reference to full image.
 struct ImageRef final {
-	using PosType = std::vector< QPair< QImage, int > >::size_type;
-	const std::vector< QPair< QImage, int > > & m_data;
+	using PosType = std::vector< QPair< QImage, size_t > >::size_type;
+	const std::vector< QPair< QImage, size_t > > & m_data;
 	PosType m_pos;
 	bool m_isEmpty;
 }; // struct ImageRef

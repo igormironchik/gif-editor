@@ -180,7 +180,7 @@ public:
 	//! Current file name.
 	QString m_currentGif;
 	//! Frames.
-	std::vector< QPair< QImage, int > > m_frames;
+	std::vector< QPair< QImage, size_t > > m_frames;
 	//! Edit mode.
 	EditMode m_editMode;
 	//! Busy flag.
@@ -392,7 +392,7 @@ class ReadGIF final
 	:	public RunnableWithException
 {
 public:
-	ReadGIF( std::vector< QPair< QImage, int > > * container,
+	ReadGIF( std::vector< QPair< QImage, size_t > > * container,
 		const QString & fileName )
 		:	m_container( container )
 		,	m_fileName( fileName )
@@ -422,7 +422,7 @@ public:
 	}
 
 private:
-	std::vector< QPair< QImage, int > > * m_container;
+	std::vector< QPair< QImage, size_t > > * m_container;
 	QString m_fileName;
 }; // class ReadGIF
 
@@ -431,7 +431,7 @@ class CropGIF final
 	:	public RunnableWithException
 {
 public:
-	CropGIF( std::vector< QPair< QImage, int > > * container,
+	CropGIF( std::vector< QPair< QImage, size_t > > * container,
 		const QRect & rect )
 		:	m_container( container )
 		,	m_rect( rect )
@@ -452,7 +452,7 @@ public:
 	}
 
 private:
-	std::vector< QPair< QImage, int > > * m_container;
+	std::vector< QPair< QImage, size_t > > * m_container;
 	QRect m_rect;
 }; // class CropGIF
 
@@ -495,7 +495,7 @@ MainWindow::openGif()
 		QApplication::processEvents();
 
 		try {
-			std::vector< QPair< QImage, int > > frames;
+			std::vector< QPair< QImage, size_t > > frames;
 
 			ReadGIF read( &frames, fileName );
 			QThreadPool::globalInstance()->start( &read );
@@ -592,7 +592,7 @@ class WriteGIF final
 	:	public RunnableWithException
 {
 public:
-	WriteGIF( const std::vector< QPair< QImage, int > > & container,
+	WriteGIF( const std::vector< QPair< QImage, size_t > > & container,
 		const QString & fileName )
 		:	m_container( container )
 		,	m_fileName( fileName )
@@ -626,7 +626,7 @@ public:
 	}
 
 private:
-	const std::vector< QPair< QImage, int > > & m_container;
+	const std::vector< QPair< QImage, size_t > > & m_container;
 	QString m_fileName;
 }; // class WriteGIF
 
@@ -638,7 +638,7 @@ MainWindow::saveGif()
 	try {
 		d->busy();
 
-		std::vector< QPair< QImage, int > > toSave;
+		std::vector< QPair< QImage, size_t > > toSave;
 
 		for( int i = 0; i < d->m_view->tape()->count(); ++i )
 		{
@@ -1318,7 +1318,7 @@ MainWindow::playStop()
 		d->m_playStop->setText( tr( "Stop" ) );
 		d->m_playStop->setIcon( QIcon( ":/img/media-playback-stop.png" ) );
 		const auto & img = d->m_view->tape()->currentFrame()->image();
-		d->m_playTimer->start( img.m_data.at( img.m_pos ).second * 10 );
+		d->m_playTimer->start( static_cast< int >( img.m_data.at( img.m_pos ).second * 10 ) );
 	}
 
 	d->m_playing = !d->m_playing;
@@ -1335,7 +1335,7 @@ MainWindow::showNextFrame()
 		if( d->m_view->tape()->frame( i )->isChecked() )
 		{
 			const auto & img = d->m_view->tape()->frame( i )->image();
-			d->m_playTimer->start( img.m_data.at( img.m_pos ).second * 10 );
+			d->m_playTimer->start( static_cast< int >( img.m_data.at( img.m_pos ).second * 10 ) );
 			d->m_view->tape()->setCurrentFrame( i );
 			frameSet = true;
 			break;
@@ -1349,7 +1349,7 @@ MainWindow::showNextFrame()
 			if( d->m_view->tape()->frame( i )->isChecked() )
 			{
 				const auto & img = d->m_view->tape()->frame( i )->image();
-				d->m_playTimer->start( img.m_data.at( img.m_pos ).second * 10 );
+				d->m_playTimer->start( static_cast< int >( img.m_data.at( img.m_pos ).second * 10 ) );
 				d->m_view->tape()->setCurrentFrame( i );
 				frameSet = true;
 				break;

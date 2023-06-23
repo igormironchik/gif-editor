@@ -48,7 +48,7 @@ class View final
 	Q_OBJECT
 
 public:
-	explicit View( const std::vector< QPair< QImage, int > > & data, QWidget * parent = nullptr );
+	explicit View( const std::vector< QPair< QImage, size_t > > & data, QWidget * parent = nullptr );
 	~View() noexcept override;
 
 	//! \return Tape.
