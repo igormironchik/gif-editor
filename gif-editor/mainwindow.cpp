@@ -180,7 +180,7 @@ public:
 	//! Current file name.
 	QString m_currentGif;
 	//! Frames.
-	std::vector< Magick::Image > m_frames;
+	std::vector< QPair< QImage, int > > m_frames;
 	//! Edit mode.
 	EditMode m_editMode;
 	//! Busy flag.
@@ -358,12 +358,42 @@ protected:
 }; // class RunnableWithException
 
 
+//
+// convert
+//
+
+QImage
+convert( const Magick::Image & img )
+{
+    QImage qimg( static_cast< int > ( img.columns() ),
+		static_cast< int > ( img.rows() ), QImage::Format_RGB888 );
+    const Magick::PixelPacket * pixels;
+    Magick::ColorRGB rgb;
+
+    for( int y = 0; y < qimg.height(); ++y)
+	{
+        pixels = img.getConstPixels( 0, y, static_cast< std::size_t > ( qimg.width() ), 1 );
+
+        for( int x = 0; x < qimg.width(); ++x )
+		{
+            rgb = ( *( pixels + x ) );
+
+            qimg.setPixel( x, y, QColor( static_cast< int> ( 255 * rgb.red() ),
+				static_cast< int > ( 255 * rgb.green() ),
+				static_cast< int > ( 255 * rgb.blue() ) ).rgb());
+        }
+    }
+
+	return qimg;
+}
+
+
 class ReadGIF final
 	:	public RunnableWithException
 {
 public:
-	ReadGIF( std::vector< Magick::Image > * container,
-		const std::string & fileName )
+	ReadGIF( std::vector< QPair< QImage, int > > * container,
+		const QString & fileName )
 		:	m_container( container )
 		,	m_fileName( fileName )
 	{
@@ -373,7 +403,17 @@ public:
 	void run() override
 	{
 		try {
-			Magick::readImages( m_container, m_fileName );
+			std::vector< Magick::Image > c;
+
+			{
+				std::vector< Magick::Image > tmp;
+				Magick::readImages( &tmp, m_fileName.toLocal8Bit().data() );
+
+				Magick::coalesceImages( &c, tmp.begin(), tmp.end() );
+			}
+
+			for( const auto & frame : c )
+				m_container->push_back( { convert( frame ), frame.animationDelay() } );
 		}
 		catch( ... )
 		{
@@ -382,48 +422,16 @@ public:
 	}
 
 private:
-	std::vector< Magick::Image > * m_container;
-	std::string m_fileName;
+	std::vector< QPair< QImage, int > > * m_container;
+	QString m_fileName;
 }; // class ReadGIF
-
-
-class CoalesceGIF final
-	:	public RunnableWithException
-{
-public:
-	CoalesceGIF( std::vector< Magick::Image > * container,
-		std::vector< Magick::Image >::iterator first,
-		std::vector< Magick::Image >::iterator last )
-		:	m_container( container )
-		,	m_first( first )
-		,	m_last( last )
-	{
-		setAutoDelete( false );
-	}
-
-	void run() override
-	{
-		try {
-			Magick::coalesceImages( m_container, m_first, m_last );
-		}
-		catch( ... )
-		{
-			m_eptr = std::current_exception();
-		}
-	}
-
-private:
-	std::vector< Magick::Image > * m_container;
-	std::vector< Magick::Image >::iterator m_first;
-	std::vector< Magick::Image >::iterator m_last;
-}; // class CoalesceGIF
 
 
 class CropGIF final
 	:	public RunnableWithException
 {
 public:
-	CropGIF( std::vector< Magick::Image > * container,
+	CropGIF( std::vector< QPair< QImage, int > > * container,
 		const QRect & rect )
 		:	m_container( container )
 		,	m_rect( rect )
@@ -435,13 +443,7 @@ public:
 	{
 		try {
 			std::for_each( m_container->begin(), m_container->end(),
-				[this] ( auto & frame )
-				{
-					frame.crop( Magick::Geometry( this->m_rect.width(), this->m_rect.height(),
-						this->m_rect.x(), this->m_rect.y() ) );
-
-					frame.repage();
-				} );
+				[this] ( auto & frame ) { frame.first = frame.first.copy( m_rect ); } );
 		}
 		catch( ... )
 		{
@@ -450,7 +452,7 @@ public:
 	}
 
 private:
-	std::vector< Magick::Image > * m_container;
+	std::vector< QPair< QImage, int > > * m_container;
 	QRect m_rect;
 }; // class CropGIF
 
@@ -493,9 +495,9 @@ MainWindow::openGif()
 		QApplication::processEvents();
 
 		try {
-			std::vector< Magick::Image > frames;
+			std::vector< QPair< QImage, int > > frames;
 
-			ReadGIF read( &frames, fileName.toStdString() );
+			ReadGIF read( &frames, fileName );
 			QThreadPool::globalInstance()->start( &read );
 
 			d->waitThreadPool();
@@ -503,18 +505,7 @@ MainWindow::openGif()
 			if( read.exception() )
 				std::rethrow_exception( read.exception() );
 
-			if( frames.size() > 1 )
-			{
-				CoalesceGIF coalesce( &d->m_frames, frames.begin(), frames.end() );
-				QThreadPool::globalInstance()->start( &coalesce );
-
-				d->waitThreadPool();
-
-				if( coalesce.exception() )
-					std::rethrow_exception( coalesce.exception() );
-			}
-			else
-				std::swap( d->m_frames, frames );
+			std::swap( d->m_frames, frames );
 
 			QFileInfo info( fileName );
 
@@ -564,15 +555,46 @@ MainWindow::openGif()
 
 namespace /* anonymous */ {
 
+Magick::Image convert( const QImage & qimg )
+{
+	Magick::Image img( Magick::Geometry( qimg.width(), qimg.height() ),
+		Magick::ColorRGB( 0.0, 0.0, 0.0) );
+
+	const double scale = 1.0 / 256.0;
+
+	img.modifyImage();
+
+	Magick::PixelPacket * pixels;
+	Magick::ColorRGB mgc;
+
+	for( int y = 0; y < qimg.height(); ++y)
+	{
+		pixels = img.setPixels( 0, y, img.columns(), 1 );
+
+		for( int x = 0; x < qimg.width(); ++x)
+		{
+			QColor pix = qimg.pixel( x, y );
+
+			mgc.red( scale * pix.red() );
+			mgc.green( scale * pix.green() );
+			mgc.blue( scale * pix.blue() );
+
+			*pixels++ = mgc;
+		}
+
+		img.syncPixels();
+	}
+
+	return img;
+}
+
 class WriteGIF final
 	:	public RunnableWithException
 {
 public:
-	WriteGIF( std::vector< Magick::Image >::iterator first,
-		std::vector< Magick::Image >::iterator last,
-		const std::string & fileName )
-		:	m_first( first )
-		,	m_last( last )
+	WriteGIF( const std::vector< QPair< QImage, int > > & container,
+		const QString & fileName )
+		:	m_container( container )
 		,	m_fileName( fileName )
 	{
 		setAutoDelete( false );
@@ -581,11 +603,21 @@ public:
 	void run() override
 	{
 		try {
-			std::vector< Magick::Image > tmp;
+			std::vector< Magick::Image > c;
 
-			Magick::optimizeImageLayers( &tmp, m_first, m_last );
+			{
+				std::vector< Magick::Image > tmp;
 
-			Magick::writeImages( tmp.begin(), tmp.end(), m_fileName );
+				for( const auto & p : m_container )
+				{
+					tmp.push_back( convert( p.first ) );
+					tmp.back().animationDelay( p.second );
+				}
+
+				Magick::optimizeImageLayers( &c, tmp.begin(), tmp.end() );
+			}
+
+			Magick::writeImages( c.begin(), c.end(), m_fileName.toLocal8Bit().data() );
 		}
 		catch( ... )
 		{
@@ -594,9 +626,8 @@ public:
 	}
 
 private:
-	std::vector< Magick::Image >::iterator m_first;
-	std::vector< Magick::Image >::iterator m_last;
-	std::string m_fileName;
+	const std::vector< QPair< QImage, int > > & m_container;
+	QString m_fileName;
 }; // class WriteGIF
 
 } /* namespace anonymous */
@@ -607,7 +638,7 @@ MainWindow::saveGif()
 	try {
 		d->busy();
 
-		std::vector< Magick::Image > toSave;
+		std::vector< QPair< QImage, int > > toSave;
 
 		for( int i = 0; i < d->m_view->tape()->count(); ++i )
 		{
@@ -620,7 +651,7 @@ MainWindow::saveGif()
 		if( !toSave.empty() )
 		{
 			try {
-				WriteGIF runnable( toSave.begin(), toSave.end(), d->m_currentGif.toStdString() );
+				WriteGIF runnable( toSave, d->m_currentGif );
 				QThreadPool::globalInstance()->start( &runnable );
 
 				d->waitThreadPool();
@@ -1287,7 +1318,7 @@ MainWindow::playStop()
 		d->m_playStop->setText( tr( "Stop" ) );
 		d->m_playStop->setIcon( QIcon( ":/img/media-playback-stop.png" ) );
 		const auto & img = d->m_view->tape()->currentFrame()->image();
-		d->m_playTimer->start( img.m_data.at( img.m_pos ).animationDelay() * 10 );
+		d->m_playTimer->start( img.m_data.at( img.m_pos ).second * 10 );
 	}
 
 	d->m_playing = !d->m_playing;
@@ -1304,7 +1335,7 @@ MainWindow::showNextFrame()
 		if( d->m_view->tape()->frame( i )->isChecked() )
 		{
 			const auto & img = d->m_view->tape()->frame( i )->image();
-			d->m_playTimer->start( img.m_data.at( img.m_pos ).animationDelay() * 10 );
+			d->m_playTimer->start( img.m_data.at( img.m_pos ).second * 10 );
 			d->m_view->tape()->setCurrentFrame( i );
 			frameSet = true;
 			break;
@@ -1318,7 +1349,7 @@ MainWindow::showNextFrame()
 			if( d->m_view->tape()->frame( i )->isChecked() )
 			{
 				const auto & img = d->m_view->tape()->frame( i )->image();
-				d->m_playTimer->start( img.m_data.at( img.m_pos ).animationDelay() * 10 );
+				d->m_playTimer->start( img.m_data.at( img.m_pos ).second * 10 );
 				d->m_view->tape()->setCurrentFrame( i );
 				frameSet = true;
 				break;

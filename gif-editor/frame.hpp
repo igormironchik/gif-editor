@@ -37,18 +37,11 @@
 
 //! Reference to full image.
 struct ImageRef final {
-	using PosType = std::vector< Magick::Image >::size_type;
-	const std::vector< Magick::Image > & m_data;
+	using PosType = std::vector< QPair< QImage, int > >::size_type;
+	const std::vector< QPair< QImage, int > > & m_data;
 	PosType m_pos;
 	bool m_isEmpty;
 }; // struct ImageRef
-
-
-//
-// convert
-//
-
-QImage convert( const Magick::Image & img );
 
 
 //
