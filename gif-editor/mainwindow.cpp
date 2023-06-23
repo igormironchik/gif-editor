@@ -48,16 +48,16 @@
 #include <QResizeEvent>
 #include <QTimer>
 
+// Magick++ include.
+#include <Magick++.h>
+#include <Magick++/Exception.h>
+
 // C++ include.
 #include <vector>
 #include <algorithm>
 
 // Widgets include.
 #include <Widgets/LicenseDialog>
-
-// bitmap include.
-#include <bmp.h>
-#include <gif.h>
 
 
 //
@@ -112,7 +112,7 @@ public:
 	//! Initialize tape.
 	void initTape()
 	{
-		for( int i = 0, last = m_frames.size(); i < last; ++i )
+		for( ImageRef::PosType i = 0, last = m_frames.size(); i < last; ++i )
 		{
 			m_view->tape()->addFrame( { m_frames, i, false } );
 
@@ -180,7 +180,7 @@ public:
 	//! Current file name.
 	QString m_currentGif;
 	//! Frames.
-	QVector< QPair< QImage, int > > m_frames;
+	std::vector< Magick::Image > m_frames;
 	//! Edit mode.
 	EditMode m_editMode;
 	//! Busy flag.
@@ -342,18 +342,28 @@ MainWindow::closeEvent( QCloseEvent * e )
 
 namespace /* anonymous */ {
 
-inline QImage toQImage( Bitmap * b )
-{
-	return QImage( bm_raw_data( b ), bm_width( b ), bm_height( b ), QImage::Format_ARGB32 ).copy();
-}
-
-
-class ReadGIF final
+class RunnableWithException
 	:	public QRunnable
 {
 public:
-	ReadGIF( QVector< QPair< QImage, int > > & container,
-		const QString & fileName )
+	std::exception_ptr exception() const
+	{
+		return m_eptr;
+	}
+
+	~RunnableWithException() noexcept override = default;
+
+protected:
+	std::exception_ptr m_eptr;
+}; // class RunnableWithException
+
+
+class ReadGIF final
+	:	public RunnableWithException
+{
+public:
+	ReadGIF( std::vector< Magick::Image > * container,
+		const std::string & fileName )
 		:	m_container( container )
 		,	m_fileName( fileName )
 	{
@@ -362,31 +372,58 @@ public:
 
 	void run() override
 	{
-		auto gif = gif_load( m_fileName.toLocal8Bit().data() );
-
-		auto frame = gif->frames;
-
-		for( int i = 0; i < gif->n; ++i )
-		{
-			m_container.push_back( { toQImage( frame->image ), frame->delay * 10 } );
-
-			++frame;
+		try {
+			Magick::readImages( m_container, m_fileName );
 		}
-
-		gif_free( gif );
+		catch( ... )
+		{
+			m_eptr = std::current_exception();
+		}
 	}
 
 private:
-	QVector< QPair< QImage, int > > & m_container;
-	QString m_fileName;
+	std::vector< Magick::Image > * m_container;
+	std::string m_fileName;
 }; // class ReadGIF
 
 
-class CropGIF final
-	:	public QRunnable
+class CoalesceGIF final
+	:	public RunnableWithException
 {
 public:
-	CropGIF( QVector< QPair< QImage, int > > & container,
+	CoalesceGIF( std::vector< Magick::Image > * container,
+		std::vector< Magick::Image >::iterator first,
+		std::vector< Magick::Image >::iterator last )
+		:	m_container( container )
+		,	m_first( first )
+		,	m_last( last )
+	{
+		setAutoDelete( false );
+	}
+
+	void run() override
+	{
+		try {
+			Magick::coalesceImages( m_container, m_first, m_last );
+		}
+		catch( ... )
+		{
+			m_eptr = std::current_exception();
+		}
+	}
+
+private:
+	std::vector< Magick::Image > * m_container;
+	std::vector< Magick::Image >::iterator m_first;
+	std::vector< Magick::Image >::iterator m_last;
+}; // class CoalesceGIF
+
+
+class CropGIF final
+	:	public RunnableWithException
+{
+public:
+	CropGIF( std::vector< Magick::Image > * container,
 		const QRect & rect )
 		:	m_container( container )
 		,	m_rect( rect )
@@ -396,12 +433,24 @@ public:
 
 	void run() override
 	{
-		for( int i = 0; i < m_container.size(); ++i )
-			m_container[ i ].first = m_container[ i ].first.copy( m_rect );
+		try {
+			std::for_each( m_container->begin(), m_container->end(),
+				[this] ( auto & frame )
+				{
+					frame.crop( Magick::Geometry( this->m_rect.width(), this->m_rect.height(),
+						this->m_rect.x(), this->m_rect.y() ) );
+
+					frame.repage();
+				} );
+		}
+		catch( ... )
+		{
+			m_eptr = std::current_exception();
+		}
 	}
 
 private:
-	QVector< QPair< QImage, int > > & m_container;
+	std::vector< Magick::Image > * m_container;
 	QRect m_rect;
 }; // class CropGIF
 
@@ -444,10 +493,28 @@ MainWindow::openGif()
 		QApplication::processEvents();
 
 		try {
-			ReadGIF read( d->m_frames, fileName );
+			std::vector< Magick::Image > frames;
+
+			ReadGIF read( &frames, fileName.toStdString() );
 			QThreadPool::globalInstance()->start( &read );
 
 			d->waitThreadPool();
+
+			if( read.exception() )
+				std::rethrow_exception( read.exception() );
+
+			if( frames.size() > 1 )
+			{
+				CoalesceGIF coalesce( &d->m_frames, frames.begin(), frames.end() );
+				QThreadPool::globalInstance()->start( &coalesce );
+
+				d->waitThreadPool();
+
+				if( coalesce.exception() )
+					std::rethrow_exception( coalesce.exception() );
+			}
+			else
+				std::swap( d->m_frames, frames );
 
 			QFileInfo info( fileName );
 
@@ -457,7 +524,7 @@ MainWindow::openGif()
 
 			d->initTape();
 
-			if( !d->m_frames.isEmpty() )
+			if( !d->m_frames.empty() )
 				d->m_view->tape()->setCurrentFrame( 1 );
 
 			d->m_crop->setEnabled( true );
@@ -465,6 +532,19 @@ MainWindow::openGif()
 			d->m_saveAs->setEnabled( true );
 
 			d->ready();
+		}
+		catch( const Magick::Exception & x )
+		{
+			d->clearView();
+
+			d->ready();
+
+			d->m_editToolBar->hide();
+
+			d->m_stack->setCurrentWidget( d->m_about );
+
+			QMessageBox::warning( this, tr( "Failed to open GIF..." ),
+				QString::fromLocal8Bit( x.what() ) );
 		}
 		catch( const std::bad_alloc & )
 		{
@@ -485,11 +565,14 @@ MainWindow::openGif()
 namespace /* anonymous */ {
 
 class WriteGIF final
-	:	public QRunnable
+	:	public RunnableWithException
 {
 public:
-	WriteGIF( const QVector< QPair< QImage, int > > & container, const QString & fileName )
-		:	m_container( container )
+	WriteGIF( std::vector< Magick::Image >::iterator first,
+		std::vector< Magick::Image >::iterator last,
+		const std::string & fileName )
+		:	m_first( first )
+		,	m_last( last )
 		,	m_fileName( fileName )
 	{
 		setAutoDelete( false );
@@ -497,30 +580,23 @@ public:
 
 	void run() override
 	{
-		if( !m_container.isEmpty() )
+		try {
+			std::vector< Magick::Image > tmp;
+
+			Magick::optimizeImageLayers( &tmp, m_first, m_last );
+
+			Magick::writeImages( tmp.begin(), tmp.end(), m_fileName );
+		}
+		catch( ... )
 		{
-			auto gif = gif_create( m_container.first().first.width(),
-				m_container.first().first.height() );
-			gif->repetitions = 0;
-
-			for( const auto & p : m_container )
-			{
-				auto b = bm_create( p.first.width(), p.first.height() );
-				memcpy( bm_raw_data( b ), p.first.bits(), p.first.sizeInBytes() );
-				auto frame = gif_add_frame( gif, b );
-				frame->delay = p.second / 10;
-				bm_free( b );
-			}
-
-			gif_save( gif, m_fileName.toLocal8Bit().data() );
-
-			gif_free( gif );
+			m_eptr = std::current_exception();
 		}
 	}
 
 private:
-	const QVector< QPair< QImage, int > > & m_container;
-	QString m_fileName;
+	std::vector< Magick::Image >::iterator m_first;
+	std::vector< Magick::Image >::iterator m_last;
+	std::string m_fileName;
 }; // class WriteGIF
 
 } /* namespace anonymous */
@@ -531,42 +607,53 @@ MainWindow::saveGif()
 	try {
 		d->busy();
 
-		QVector< QPair< QImage, int > > toSave;
+		std::vector< Magick::Image > toSave;
 
 		for( int i = 0; i < d->m_view->tape()->count(); ++i )
 		{
 			if( d->m_view->tape()->frame( i + 1 )->isChecked() )
-				toSave.push_back( d->m_frames.at( i ) );
+				toSave.push_back( d->m_frames.at( static_cast< std::size_t > ( i ) ) );
 
 			QApplication::processEvents();
 		}
 
 		if( !toSave.empty() )
 		{
-			d->m_frames = toSave;
-			toSave.clear();
+			try {
+				WriteGIF runnable( toSave.begin(), toSave.end(), d->m_currentGif.toStdString() );
+				QThreadPool::globalInstance()->start( &runnable );
 
-			WriteGIF runnable( d->m_frames, d->m_currentGif );
-			QThreadPool::globalInstance()->start( &runnable );
+				d->waitThreadPool();
 
-			d->waitThreadPool();
+				if( runnable.exception() )
+					std::rethrow_exception( runnable.exception() );
 
-			d->m_view->currentFrame()->clearImage();
-			d->m_view->tape()->removeUnchecked();
+				d->m_view->currentFrame()->clearImage();
+				d->m_view->tape()->removeUnchecked();
 
-			QApplication::processEvents();
-
-			for( int i = 1; i <= d->m_view->tape()->count(); ++i )
-			{
-				d->m_view->tape()->frame( i )->setImagePos( i - 1 );
-				d->m_view->tape()->frame( i )->applyImage();
 				QApplication::processEvents();
+
+				d->m_frames = toSave;
+
+				for( int i = 1; i <= d->m_view->tape()->count(); ++i )
+				{
+					d->m_view->tape()->frame( i )->setImagePos( (ImageRef::PosType) i - 1 );
+					d->m_view->tape()->frame( i )->applyImage();
+					QApplication::processEvents();
+				}
+
+				d->m_view->currentFrame()->setImagePos( d->m_view->currentFrame()->image().m_pos );
+				d->m_view->currentFrame()->applyImage();
+
+				d->setModified( false );
 			}
+			catch( const Magick::Exception & x )
+			{
+				d->ready();
 
-			d->m_view->currentFrame()->setImagePos( d->m_view->currentFrame()->image().m_pos );
-			d->m_view->currentFrame()->applyImage();
-
-			d->setModified( false );
+				QMessageBox::warning( this, tr( "Failed to save GIF..." ),
+					QString::fromLocal8Bit( x.what() ) );
+			}
 		}
 		else
 		{
@@ -701,13 +788,19 @@ MainWindow::applyEdit()
 				QApplication::processEvents();
 
 				try {
-					CropGIF crop( d->m_frames, rect );
+					auto tmpFrames = d->m_frames;
+
+					CropGIF crop( &tmpFrames, rect );
 					QThreadPool::globalInstance()->start( &crop );
 
 					d->waitThreadPool();
 
+					if( crop.exception() )
+						std::rethrow_exception( crop.exception() );
+
 					const auto current = d->m_view->tape()->currentFrame()->counter();
 					d->m_view->tape()->clear();
+					std::swap( d->m_frames, tmpFrames );
 
 					QApplication::processEvents();
 
@@ -723,6 +816,15 @@ MainWindow::applyEdit()
 					cancelEdit();
 
 					d->ready();
+				}
+				catch( const Magick::Exception & x )
+				{
+					d->ready();
+
+					cancelEdit();
+
+					QMessageBox::warning( this, tr( "Failed to crop GIF..." ),
+						QString::fromLocal8Bit( x.what() ) );
 				}
 				catch( const std::bad_alloc & )
 				{
@@ -979,21 +1081,175 @@ MainWindow::licenses()
 		"apply, that proxy's public statement of acceptance of any version is "
 		"permanent authorization for you to choose that version for the "
 		"Library.</p>" ) );
-	msg.addLicense( QStringLiteral( "Bitmap API" ),
-		QStringLiteral( "<p><b>Bitmap API</b>\n\n</p>"
-			"<p>MIT No Attribution</p>\n\n"
-			"<p>Copyright (c) 2017 Werner Stoop</p>\n\n"
-			"<p>Permission is hereby granted, free of charge, to any person obtaining a copy of this "
-			"software and associated documentation files (the \"Software\"), to deal in the Software "
-			"without restriction, including without limitation the rights to use, copy, modify, "
-			"merge, publish, distribute, sublicense, and/or sell copies of the Software, and to "
-			"permit persons to whom the Software is furnished to do so.</p>\n\n"
-			"<p>THE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, "
-			"INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A "
-			"PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT "
-			"HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION "
-			"OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE "
-			"SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.</p>" ) );
+	msg.addLicense( QStringLiteral( "ImageMagick" ),
+		QStringLiteral( "<p><b>ImageMagick License</b>\n\n</p>"
+		"<p>Terms and Conditions for Use, Reproduction, and Distribution\n</p>"
+		"\n"
+		"<p>The legally binding and authoritative terms and conditions for use, reproduction, "
+		"and distribution of ImageMagick follow:\n</p>"
+		"\n"
+		"<p>Copyright (c) 1999-2021 ImageMagick Studio LLC, a non-profit organization dedicated "
+		"to making software imaging solutions freely available.\n</p>"
+		"\n"
+		"<p><b>1.</b> Definitions.\n</p>"
+		"\n"
+		"<p>License shall mean the terms and conditions for use, reproduction, and distribution as "
+		"defined by Sections 1 through 9 of this document.\n</p>"
+		"\n"
+		"<p>Licensor shall mean the copyright owner or entity authorized by the copyright owner "
+		"that is granting the License.\n</p>"
+		"\n"
+		"<p>Legal Entity shall mean the union of the acting entity and all other entities that "
+		"control, are controlled by, or are under common control with that entity. For the "
+		"purposes of this definition, control means (i) the power, direct or indirect, to cause "
+		"the direction or management of such entity, whether by contract or otherwise, or (ii) "
+		"ownership of fifty percent (50%) or more of the outstanding shares, or (iii) beneficial "
+		"ownership of such entity.\n</p>"
+		"\n"
+		"<p>You (or Your) shall mean an individual or Legal Entity exercising permissions granted "
+		"by this License.\n</p>"
+		"\n"
+		"<p>Source form shall mean the preferred form for making modifications, including but not "
+		"limited to software source code, documentation source, and configuration files.\n</p>"
+		"\n"
+		"<p>Object form shall mean any form resulting from mechanical transformation or translation "
+		"of a Source form, including but not limited to compiled object code, generated "
+		"documentation, and conversions to other media types.\n</p>"
+		"\n"
+		"<p>Work shall mean the work of authorship, whether in Source or Object form, made available "
+		"under the License, as indicated by a copyright notice that is included in or attached to "
+		"the work (an example is provided in the Appendix below).\n</p>"
+		"\n"
+		"<p>Derivative Works shall mean any work, whether in Source or Object form, that is based on "
+		"(or derived from) the Work and for which the editorial revisions, annotations, "
+		"elaborations, or other modifications represent, as a whole, an original work of "
+		"authorship. For the purposes of this License, Derivative Works shall not include works "
+		"that remain separable from, or merely link (or bind by name) to the interfaces of, the "
+		"Work and Derivative Works thereof.\n</p>"
+		"\n"
+		"<p>Contribution shall mean any work of authorship, including the original version of the "
+		"Work and any modifications or additions to that Work or Derivative Works thereof, that is "
+		"intentionally submitted to Licensor for inclusion in the Work by the copyright owner or "
+		"by an individual or Legal Entity authorized to submit on behalf of the copyright owner. "
+		"For the purposes of this definition, \"submitted\" means any form of electronic, verbal, "
+		"or written communication sent to the Licensor or its representatives, including but not "
+		"limited to communication on electronic mailing lists, source code control systems, and "
+		"issue tracking systems that are managed by, or on behalf of, the Licensor for the purpose "
+		"of discussing and improving the Work, but excluding communication that is conspicuously "
+		"marked or otherwise designated in writing by the copyright owner as Not a Contribution.\n</p>"
+		"\n"
+		"<p>Contributor shall mean Licensor and any individual or Legal Entity on behalf of whom a "
+		"Contribution has been received by Licensor and subsequently incorporated within the Work.\n</p>"
+		"\n"
+		"<p><b>2.</b> Grant of Copyright License. Subject to the terms and conditions of this License, each "
+		"Contributor hereby grants to You a perpetual, worldwide, non-exclusive, no-charge, "
+		"royalty-free, irrevocable copyright license to reproduce, prepare Derivative Works of, "
+		"publicly display, publicly perform, sublicense, and distribute the Work and such "
+		"Derivative Works in Source or Object form.\n</p>"
+		"\n"
+		"<p><b>3.</b> Grant of Patent License. Subject to the terms and conditions of this License, each "
+		"Contributor hereby grants to You a perpetual, worldwide, non-exclusive, no-charge, "
+		"royalty-free, irrevocable (except as stated in this section) patent license to make, have "
+		"made, use, offer to sell, sell, import, and otherwise transfer the Work, where such "
+		"license applies only to those patent claims licensable by such Contributor that are "
+		"necessarily infringed by their Contribution(s) alone or by combination of their "
+		"Contribution(s) with the Work to which such Contribution(s) was submitted. If You "
+		"institute patent litigation against any entity (including a cross-claim or counterclaim "
+		"in a lawsuit) alleging that the Work or a Contribution incorporated within the Work "
+		"constitutes direct or contributory patent infringement, then any patent licenses granted "
+		"to You under this License for that Work shall terminate as of the date such litigation "
+		"is filed.\n</p>"
+		"\n"
+		"<p><b>4.</b> Redistribution. You may reproduce and distribute copies of the Work or Derivative "
+		"Works thereof in any medium, with or without modifications, and in Source or Object "
+		"form, provided that You meet the following conditions:\n</p>"
+		"\n"
+		"<p> <b>a.</b> You must give any other recipients of the Work or Derivative Works a copy of this "
+		"License; and\n</p>"
+		"<p> <b>b.</b> You must cause any modified files to carry prominent notices stating that You changed "
+		"the files; and\n</p>"
+		"<p> <b>c.</b> You must retain, in the Source form of any Derivative Works that You distribute, all "
+		"copyright, patent, trademark, and attribution notices from the Source form of the Work, "
+		"excluding those notices that do not pertain to any part of the Derivative Works; and\n</p>"
+		"<p> <b>d.</b> If the Work includes a \"NOTICE\" text file as part of its distribution, then any "
+		"Derivative Works that You distribute must include a readable copy of the attribution "
+		"notices contained within such NOTICE file, excluding those notices that do not pertain "
+		"to any part of the Derivative Works, in at least one of the following places: within a "
+		"NOTICE text file distributed as part of the Derivative Works; within the Source form or "
+		"documentation, if provided along with the Derivative Works; or, within a display "
+		"generated by the Derivative Works, if and wherever such third-party notices normally "
+		"appear. The contents of the NOTICE file are for informational purposes only and do not "
+		"modify the License. You may add Your own attribution notices within Derivative Works "
+		"that You distribute, alongside or as an addendum to the NOTICE text from the Work, "
+		"provided that such additional attribution notices cannot be construed as modifying the "
+		"License.\n</p>"
+		"\n"
+		"<p>You may add Your own copyright statement to Your modifications and may provide additional "
+		"or different license terms and conditions for use, reproduction, or distribution of Your "
+		"modifications, or for any such Derivative Works as a whole, provided Your use, "
+		"reproduction, and distribution of the Work otherwise complies with the conditions stated "
+		"in this License.\n</p>"
+		"\n"
+		"<p><b>5.</b> Submission of Contributions. Unless You explicitly state otherwise, any Contribution "
+		"intentionally submitted for inclusion in the Work by You to the Licensor shall be under "
+		"the terms and conditions of this License, without any additional terms or conditions. "
+		"Notwithstanding the above, nothing herein shall supersede or modify the terms of any "
+		"separate license agreement you may have executed with Licensor regarding such Contributions.\n</p>"
+		"\n"
+		"<p><b>6.</b> Trademarks. This License does not grant permission to use the trade names, trademarks, "
+		"service marks, or product names of the Licensor, except as required for reasonable and "
+		"customary use in describing the origin of the Work and reproducing the content of the "
+		"NOTICE file.\n</p>"
+		"\n"
+		"<p><b>7.</b> Disclaimer of Warranty. Unless required by applicable law or agreed to in writing, "
+		"Licensor provides the Work (and each Contributor provides its Contributions) on an AS IS "
+		"BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied, "
+		"including, without limitation, any warranties or conditions of TITLE, NON-INFRINGEMENT, "
+		"MERCHANTABILITY, or FITNESS FOR A PARTICULAR PURPOSE. You are solely responsible for "
+		"determining the appropriateness of using or redistributing the Work and assume any risks "
+		"associated with Your exercise of permissions under this License.\n</p>"
+		"\n"
+		"<p><b>8.</b> Limitation of Liability. In no event and under no legal theory, whether in tort "
+		"(including negligence), contract, or otherwise, unless required by applicable law (such "
+		"as deliberate and grossly negligent acts) or agreed to in writing, shall any Contributor "
+		"be liable to You for damages, including any direct, indirect, special, incidental, or "
+		"consequential damages of any character arising as a result of this License or out of the "
+		"use or inability to use the Work (including but not limited to damages for loss of "
+		"goodwill, work stoppage, computer failure or malfunction, or any and all other "
+		"commercial damages or losses), even if such Contributor has been advised of the "
+		"possibility of such damages.\n</p>"
+		"\n"
+		"<p><b>9.</b> Accepting Warranty or Additional Liability. While redistributing the Work or "
+		"Derivative Works thereof, You may choose to offer, and charge a fee for, acceptance of "
+		"support, warranty, indemnity, or other liability obligations and/or rights consistent "
+		"with this License. However, in accepting such obligations, You may act only on Your own "
+		"behalf and on Your sole responsibility, not on behalf of any other Contributor, and only "
+		"if You agree to indemnify, defend, and hold each Contributor harmless for any liability "
+		"incurred by, or claims asserted against, such Contributor by reason of your accepting "
+		"any such warranty or additional liability.\n</p>"
+		"\n"
+		"<p>How to Apply the License to your Work\n</p>"
+		"\n"
+		"<p>To apply the ImageMagick License to your work, attach the following boilerplate notice, "
+		"with the fields enclosed by brackets \"[]\" replaced with your own identifying "
+		"information (don't include the brackets). The text should be enclosed in the appropriate "
+		"comment syntax for the file format. We also recommend that a file or class name and "
+		"description of purpose be included on the same \"printed page\" as the copyright notice "
+		"for easier identification within third-party archives.\n</p>"
+		"\n"
+		"<p>    Copyright [yyyy] [name of copyright owner]\n</p>"
+		"\n"
+		"<p>    Licensed under the ImageMagick License (the \"License\"); you may not use\n"
+		"    this file except in compliance with the License.  You may obtain a copy\n"
+		"    of the License at\n</p>"
+		"\n"
+		"<p>    <a href=\"https://imagemagick.org/script/license.php\">https://imagemagick.org/script/license.php</a>\n</p>"
+		"\n"
+		"<p>    Unless required by applicable law or agreed to in writing, software\n"
+		"    distributed under the License is distributed on an \"AS IS\" BASIS, WITHOUT\n"
+		"    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the\n"
+		"    License for the specific language governing permissions and limitations\n"
+		"    under the License.</p>" ) );
 
 	msg.exec();
 }
@@ -1031,7 +1287,7 @@ MainWindow::playStop()
 		d->m_playStop->setText( tr( "Stop" ) );
 		d->m_playStop->setIcon( QIcon( ":/img/media-playback-stop.png" ) );
 		const auto & img = d->m_view->tape()->currentFrame()->image();
-		d->m_playTimer->start( img.m_data.at( img.m_pos ).second );
+		d->m_playTimer->start( img.m_data.at( img.m_pos ).animationDelay() * 10 );
 	}
 
 	d->m_playing = !d->m_playing;
@@ -1048,7 +1304,7 @@ MainWindow::showNextFrame()
 		if( d->m_view->tape()->frame( i )->isChecked() )
 		{
 			const auto & img = d->m_view->tape()->frame( i )->image();
-			d->m_playTimer->start( img.m_data.at( img.m_pos ).second );
+			d->m_playTimer->start( img.m_data.at( img.m_pos ).animationDelay() * 10 );
 			d->m_view->tape()->setCurrentFrame( i );
 			frameSet = true;
 			break;
@@ -1062,7 +1318,7 @@ MainWindow::showNextFrame()
 			if( d->m_view->tape()->frame( i )->isChecked() )
 			{
 				const auto & img = d->m_view->tape()->frame( i )->image();
-				d->m_playTimer->start( img.m_data.at( img.m_pos ).second );
+				d->m_playTimer->start( img.m_data.at( img.m_pos ).animationDelay() * 10 );
 				d->m_view->tape()->setCurrentFrame( i );
 				frameSet = true;
 				break;

@@ -27,6 +27,9 @@
 #include <QWidget>
 #include <QScopedPointer>
 
+// Magick++ include.
+#include <Magick++.h>
+
 
 //
 // ImageRef
@@ -34,11 +37,18 @@
 
 //! Reference to full image.
 struct ImageRef final {
-	using PosType = int;
-	const QVector< QPair< QImage, int > > & m_data;
+	using PosType = std::vector< Magick::Image >::size_type;
+	const std::vector< Magick::Image > & m_data;
 	PosType m_pos;
 	bool m_isEmpty;
 }; // struct ImageRef
+
+
+//
+// convert
+//
+
+QImage convert( const Magick::Image & img );
 
 
 //

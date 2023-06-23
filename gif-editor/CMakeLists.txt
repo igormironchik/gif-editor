@@ -34,9 +34,8 @@ if( WIN32 )
 endif()
 
 include_directories( ${ImageMagick_INCLUDE_DIRS}
-	${CMAKE_CURRENT_SOURCE_DIR}/../3rdparty/widgets/include
-	${CMAKE_CURRENT_SOURCE_DIR}/../3rdparty/bitmap )
+ ${CMAKE_CURRENT_SOURCE_DIR}/../3rdparty/widgets/include )
 
 add_executable( GIFEditor.App WIN32 ${SRC} )
 
-target_link_libraries( GIFEditor.App ${ImageMagick_LIBRARIES} widgets bitmap Qt6::Widgets Qt6::Gui Qt6::Core )
+target_link_libraries( GIFEditor.App ${ImageMagick_LIBRARIES} widgets Qt6::Widgets Qt6::Gui Qt6::Core )
