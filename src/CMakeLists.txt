@@ -1,5 +1,5 @@
 
-project( GIFEditor.App )
+project( gif-editor )
 
 set( CMAKE_AUTOMOC ON )
 set( CMAKE_AUTORCC ON )
@@ -36,6 +36,6 @@ endif()
 include_directories( ${ImageMagick_INCLUDE_DIRS}
  ${CMAKE_CURRENT_SOURCE_DIR}/../3rdparty/widgets/include )
 
-add_executable( GIFEditor.App WIN32 ${SRC} )
+add_executable( gif-editor WIN32 ${SRC} )
 
-target_link_libraries( GIFEditor.App ${ImageMagick_LIBRARIES} widgets Qt6::Widgets Qt6::Gui Qt6::Core )
+target_link_libraries( gif-editor ${ImageMagick_LIBRARIES} widgets Qt6::Widgets Qt6::Gui Qt6::Core )
