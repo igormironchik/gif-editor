@@ -34,8 +34,10 @@ if( WIN32 )
 endif()
 
 include_directories( ${ImageMagick_INCLUDE_DIRS}
- ${CMAKE_CURRENT_SOURCE_DIR}/../3rdparty/widgets/include )
+	${CMAKE_CURRENT_SOURCE_DIR}/../3rdparty/widgets/include
+	${CMAKE_CURRENT_SOURCE_DIR}/../3rdparty/qgiflib/src
+	${CMAKE_CURRENT_SOURCE_DIR}/../3rdparty/qgiflib/3rdparty/giflib )
 
 add_executable( gif-editor WIN32 ${SRC} )
 
-target_link_libraries( gif-editor ${ImageMagick_LIBRARIES} widgets Qt6::Widgets Qt6::Gui Qt6::Core )
+target_link_libraries( gif-editor qgiflib ${ImageMagick_LIBRARIES} widgets Qt6::Widgets Qt6::Gui Qt6::Core )

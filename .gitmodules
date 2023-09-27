@@ -1,3 +1,6 @@
 [submodule "3rdparty/widgets"]
 	path = 3rdparty/widgets
 	url = https://github.com/igormironchik/widgets.git
+[submodule "3rdparty/qgiflib"]
+	path = 3rdparty/qgiflib
+	url = https://github.com/igormironchik/qgiflib.git

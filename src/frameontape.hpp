@@ -58,7 +58,7 @@ public:
 	//! \return Image.
 	const ImageRef & image() const;
 	//! Set image.
-	void setImagePos( const ImageRef::PosType & pos );
+	void setImagePos( qsizetype pos );
 	//! Clear image.
 	void clearImage();
 	//! Apply image.

@@ -13,12 +13,8 @@ SET( CMAKE_CXX_STANDARD_REQUIRED ON )
 
 project( GifEditor )
 
-find_package( ImageMagick 6 EXACT REQUIRED COMPONENTS Magick++ MagickCore )
-
-add_definitions( -DMAGICKCORE_QUANTUM_DEPTH=16 )
-add_definitions( -DMAGICKCORE_HDRI_ENABLE=0 )
-
 set( BUILD_WIDGETS_EXAMPLES OFF CACHE INTERNAL "" FORCE )
 add_subdirectory( 3rdparty/widgets )
 
+add_subdirectory( 3rdparty/qgiflib )
 add_subdirectory( src )

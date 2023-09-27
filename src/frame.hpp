@@ -27,9 +27,8 @@
 #include <QWidget>
 #include <QScopedPointer>
 
-
-//! Tyepe of storage of frames.
-using Frames = std::vector< QPair< QImage, size_t > >;
+// qgiflib include.
+#include <qgiflib.hpp>
 
 
 //
@@ -38,9 +37,8 @@ using Frames = std::vector< QPair< QImage, size_t > >;
 
 //! Reference to full image.
 struct ImageRef final {
-	using PosType = Frames::size_type;
-	const Frames & m_data;
-	PosType m_pos;
+	const QGifLib::Gif & m_gif;
+	qsizetype m_pos;
 	bool m_isEmpty;
 }; // struct ImageRef
 
@@ -78,7 +76,7 @@ public:
 	//! \return Image.
 	const ImageRef & image() const;
 	//! Set image.
-	void setImagePos( const ImageRef::PosType & pos );
+	void setImagePos( qsizetype pos );
 	//! Clear image.
 	void clearImage();
 	//! Apply image.

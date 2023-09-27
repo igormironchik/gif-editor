@@ -124,7 +124,7 @@ FramePrivate::createThumbnail( int height )
 
 		if( m_mode == Frame::ResizeMode::FitToHeight )
 		{
-			ThumbnailCreator c( m_image.m_data.at( m_image.m_pos ).first, q->width(), q->height(),
+			ThumbnailCreator c( m_image.m_gif.at( m_image.m_pos ), q->width(), q->height(),
 				height, m_mode );
 
 			QThreadPool::globalInstance()->start( &c );
@@ -136,16 +136,19 @@ FramePrivate::createThumbnail( int height )
 		}
 		else
 		{
-			if( m_image.m_data.at( m_image.m_pos ).first.width() > q->width() ||
-				m_image.m_data.at( m_image.m_pos ).first.height() > q->height() )
+			const auto img = m_image.m_gif.at( m_image.m_pos );
+
+			if( img.width() > q->width() || img.height() > q->height() )
 			{
-				m_thumbnail = m_image.m_data.at( m_image.m_pos ).first
-					.scaled( q->width(), q->height(),
-						Qt::KeepAspectRatio, Qt::SmoothTransformation );
+				m_thumbnail = img.scaled( q->width(), q->height(),
+					Qt::KeepAspectRatio, Qt::SmoothTransformation );
 			}
 			else
-				m_thumbnail = m_image.m_data.at( m_image.m_pos ).first;
+				m_thumbnail = img;
 		}
+
+		m_image.m_gif.at( m_image.m_pos ).save( "original.png" );
+		m_thumbnail.save( "thumbnail.png" );
 	}
 }
 
@@ -198,7 +201,7 @@ Frame::image() const
 }
 
 void
-Frame::setImagePos( const ImageRef::PosType & pos )
+Frame::setImagePos( qsizetype pos )
 {
 	d->m_image.m_pos = pos;
 	d->m_desiredHeight = -1;
@@ -244,7 +247,7 @@ Frame::imageRect() const
 {
 	if( !d->m_image.m_isEmpty )
 	{
-		const auto & img = d->m_image.m_data.at( d->m_image.m_pos ).first;
+		const auto img = d->m_image.m_gif.at( d->m_image.m_pos );
 
 		return QRect( 0, 0, img.width(), img.height() );
 	}

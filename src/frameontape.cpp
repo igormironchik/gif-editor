@@ -137,7 +137,7 @@ FrameOnTape::image() const
 }
 
 void
-FrameOnTape::setImagePos( const ImageRef::PosType & pos )
+FrameOnTape::setImagePos( qsizetype pos )
 {
 	d->m_frame->setImagePos( pos );
 }
@@ -211,8 +211,8 @@ FrameOnTape::contextMenuEvent( QContextMenuEvent * e )
 					if( !fileName.endsWith( QStringLiteral( ".png" ), Qt::CaseInsensitive ) )
 						fileName.append( QStringLiteral( ".png" ) );
 
-					const auto & img = this->d->m_frame->image().m_data.at(
-						this->d->m_frame->image().m_pos ).first;
+					const auto img = this->d->m_frame->image().m_gif.at(
+						this->d->m_frame->image().m_pos );
 					img.save( fileName );
 				}
 			} );

@@ -30,6 +30,9 @@
 // gif-editor include.
 #include "frame.hpp"
 
+// qgiflib include.
+#include <qgiflib.hpp>
+
 
 class Tape;
 
@@ -47,7 +50,7 @@ class View final
 	Q_OBJECT
 
 public:
-	explicit View( const Frames & data, QWidget * parent = nullptr );
+	explicit View( const QGifLib::Gif & data, QWidget * parent = nullptr );
 	~View() noexcept override;
 
 	//! \return Tape.

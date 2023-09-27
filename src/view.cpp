@@ -67,7 +67,7 @@ public:
 
 class ViewPrivate {
 public:
-	ViewPrivate( const Frames & data, View * parent )
+	ViewPrivate( const QGifLib::Gif & data, View * parent )
 		:	m_tape( nullptr )
 		,	m_currentFrame( new Frame( { data, 0, true }, Frame::ResizeMode::FitToSize, parent ) )
 		,	m_crop( nullptr )
@@ -93,7 +93,7 @@ public:
 // View
 //
 
-View::View( const Frames & data, QWidget * parent )
+View::View( const QGifLib::Gif & data, QWidget * parent )
 	:	QWidget( parent )
 	,	d( new ViewPrivate( data, this ) )
 {
@@ -174,7 +174,7 @@ View::frameSelected( int idx )
 {
 	if( idx >= 1 && idx <= d->m_tape->count() )
 	{
-		d->m_currentFrame->setImagePos( (ImageRef::PosType) idx - 1 );
+		d->m_currentFrame->setImagePos( idx - 1 );
 		d->m_currentFrame->applyImage();
 	}
 	else
