@@ -1,14 +1,6 @@
 # About
 
-Simple `GIF` `Open Source` editor. This `GIF` editor uses `ImageMagick` and creates
-full image for each frame, so if you will try to open a big `GIF` and will see
-that only first some frames draws correctly, and the last ones - no, this can
-mean that `ImageMagick` used all resources available to it. You can allow to use
-more resources by editing `policy.xml`, for example enlarge disk quota.
-
-```
-<policy domain="resource" name="disk" value="10GiB"/>
-```
+Simple `GIF` `Open Source` editor.
 
 # Getting from Repository
 
@@ -21,6 +13,9 @@ git submodule update --init --recursive
 # Dependencies
 
 `Magick++` from `ImageMagick` 6 is required.
+
+I use `ImageMagick` in my library for wotk with `GIFs` to convert `TrueColor`
+images into 256 colors, it very cool at this, `ImageMagick` just do a real magick.
 
 # Book
 
