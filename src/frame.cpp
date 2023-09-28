@@ -146,9 +146,6 @@ FramePrivate::createThumbnail( int height )
 			else
 				m_thumbnail = img;
 		}
-
-		m_image.m_gif.at( m_image.m_pos ).save( "original.png" );
-		m_thumbnail.save( "thumbnail.png" );
 	}
 }
 
