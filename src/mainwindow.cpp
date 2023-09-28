@@ -224,19 +224,22 @@ public:
 			m_save->setEnabled( false );
 	}
 
-	//! Check if frame checked and select it if so.
-	bool ifFrameCheckedSelectIt( int idx )
+	//! \return Index of the next checked frame.
+	int nextCheckedFrame( int current ) const
 	{
-		if( m_view->tape()->frame( idx )->isChecked() )
+		for( int i = current + 1; i <= m_view->tape()->count(); ++i )
 		{
-			const auto & img = m_view->tape()->frame( idx )->image();
-			m_playTimer->start( static_cast< int >( img.m_gif.delay( img.m_pos ) ) );
-			m_view->tape()->setCurrentFrame( idx );
-
-			return true;
+			if( m_view->tape()->frame( i )->isChecked() )
+				return i;
 		}
 
-		return false;
+		for( int i = 1; i < current; ++i )
+		{
+			if( m_view->tape()->frame( i )->isChecked() )
+				return i;
+		}
+
+		return -1;
 	}
 
 	void openGif( const QString & fileName )
@@ -1151,15 +1154,19 @@ MainWindow::playStop()
 void
 MainWindow::showNextFrame()
 {
-	bool frameSet = false;
+	const auto next = d->nextCheckedFrame( d->m_view->tape()->currentFrame()->counter() );
 
-	for( int i = d->m_view->tape()->currentFrame()->counter() + 1;
-		i <= d->m_view->tape()->count() && !frameSet; ++i )
-			frameSet = d->ifFrameCheckedSelectIt( i );
+	if( next != -1 )
+	{
+		const auto nextDelay = d->nextCheckedFrame( next );
 
-	for( int i = 1; i < d->m_view->tape()->currentFrame()->counter() && !frameSet; ++i )
-		frameSet = d->ifFrameCheckedSelectIt( i );
+		if( nextDelay != -1 )
+		{
+			const auto & img = d->m_view->tape()->frame( nextDelay )->image();
+			d->m_playTimer->start( d->m_frames.delay( img.m_pos ) );
+		}
 
-	if( frameSet )
-		d->m_view->scrollTo( d->m_view->tape()->currentFrame()->counter() );
+		d->m_view->tape()->setCurrentFrame( next );
+		d->m_view->scrollTo( next );
+	}
 }
