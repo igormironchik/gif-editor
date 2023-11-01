@@ -29,6 +29,9 @@
 #include <QHBoxLayout>
 #include <QApplication>
 
+// C++ include.
+#include <utility>
+
 
 //
 // TapePrivate
@@ -48,7 +51,7 @@ public:
 
 	void clearImages()
 	{
-		for( auto & f : qAsConst( m_frames ) )
+		for( auto & f : std::as_const( m_frames ) )
 			f->clearImage();
 	}
 

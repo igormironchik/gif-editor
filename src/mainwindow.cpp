@@ -51,6 +51,7 @@
 // C++ include.
 #include <vector>
 #include <algorithm>
+#include <utility>
 
 // Widgets include.
 #include <Widgets/LicenseDialog>
@@ -667,7 +668,7 @@ MainWindow::applyEdit()
 
 				d->m_view->tape()->setCurrentFrame( current );
 
-				for( const auto & i : qAsConst( unchecked ) )
+				for( const auto & i : std::as_const( unchecked ) )
 					d->m_view->tape()->frame( i )->setChecked( false );
 
 				d->setModified( true );
