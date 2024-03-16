@@ -47,6 +47,7 @@
 #include <QStandardPaths>
 #include <QResizeEvent>
 #include <QTimer>
+#include <QMetaMethod>
 
 // C++ include.
 #include <vector>
@@ -86,23 +87,40 @@ class CropGIF final
 	:	public QRunnable
 {
 public:
-	CropGIF( QGifLib::Gif * container,
+	CropGIF( BusyIndicator * receiver,
+		QGifLib::Gif * container,
 		const QRect & rect )
 		:	m_container( container )
 		,	m_rect( rect )
+		,	m_receiver( receiver )
 	{
 		setAutoDelete( false );
 	}
 
 	void run() override
-	{
+	{	
+		const auto index = m_receiver->metaObject()->indexOfProperty( "percent" );
+		auto property = m_receiver->metaObject()->property( index );
+		
+		int current = 0;
+		const auto count = m_container->fileNames().size();
+		
+		property.write( m_receiver, 0 );
+		
 		for( const auto & fileName : m_container->fileNames() )
+		{
 			QImage( fileName ).copy( m_rect ).save( fileName );
+			++current;
+			property.write( m_receiver, qRound( ( (double) current / (double) count ) * 100.0 ) );
+		}
+		
+		property.write( m_receiver, 100 );
 	}
 
 private:
 	QGifLib::Gif * m_container;
 	QRect m_rect;
+	BusyIndicator * m_receiver;
 }; // class CropGIF
 
 } /* namespace anonymous */
@@ -471,25 +489,33 @@ class WriteGIF final
 	:	public QRunnable
 {
 public:
-	WriteGIF( const QStringList & files,
+	WriteGIF( BusyIndicator * receiver,
+		const QStringList & files,
 		const QVector< int > & delays,
 		const QString & fileName )
 		:	m_files( files )
 		,	m_delays( delays )
 		,	m_fileName( fileName )
+		,	m_receiver( receiver )
 	{
 		setAutoDelete( false );
 	}
 
 	void run() override
-	{
-		QGifLib::Gif::write( m_fileName, m_files, m_delays, 0 );
+	{			
+		QGifLib::Gif gif;
+		
+		QObject::connect( &gif, &QGifLib::Gif::writeProgress,
+			m_receiver, &BusyIndicator::setPercent );
+		
+		gif.write( m_fileName, m_files, m_delays, 0 );
 	}
 
 private:
 	const QStringList & m_files;
 	const QVector< int > & m_delays;
 	QString m_fileName;
+	BusyIndicator * m_receiver;
 }; // class WriteGIF
 
 } /* namespace anonymous */
@@ -515,10 +541,14 @@ MainWindow::saveGif()
 
 		if( !toSave.empty() )
 		{
-			WriteGIF runnable( toSave, delays, d->m_currentGif );
+			d->m_busy->setShowPercent( true );
+			
+			WriteGIF runnable( d->m_busy, toSave, delays, d->m_currentGif );
 			QThreadPool::globalInstance()->start( &runnable );
 
 			d->waitThreadPool();
+			
+			d->m_busy->setShowPercent( false );
 
 			d->openGif( d->m_currentGif );
 		}
@@ -653,11 +683,15 @@ MainWindow::applyEdit()
 				}
 
 				QApplication::processEvents();
+				
+				d->m_busy->setShowPercent( true );
 
-				CropGIF crop( &d->m_frames, rect );
+				CropGIF crop( d->m_busy, &d->m_frames, rect );
 				QThreadPool::globalInstance()->start( &crop );
 
 				d->waitThreadPool();
+				
+				d->m_busy->setShowPercent( false );
 
 				const auto current = d->m_view->tape()->currentFrame()->counter();
 				d->m_view->tape()->clear();

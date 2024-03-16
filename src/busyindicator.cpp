@@ -49,9 +49,11 @@ public:
 
 	int outerRadius;
 	int innerRadius;
+	int percent = 0;
 	QSize size;
 	QColor color;
 	bool running;
+	bool showPercent = false;
 	QVariantAnimation * animation;
 	BusyIndicator * q;
 }; // class BusyIndicatorPrivate
@@ -151,6 +153,41 @@ BusyIndicator::setRadius( int r )
 	}
 }
 
+int
+BusyIndicator::percent() const
+{
+	return d->percent;
+}
+
+void
+BusyIndicator::setPercent( int p )
+{
+	if( d->percent != p )
+	{
+		d->percent = p;
+		
+		if( d->showPercent )
+			update();
+	}
+}
+
+bool
+BusyIndicator::showPercent() const
+{
+	return d->showPercent;
+}
+
+void
+BusyIndicator::setShowPercent( bool on )
+{
+	if( d->showPercent != on )
+	{
+		d->showPercent = on;
+		
+		update();
+	}
+}
+
 QSize
 BusyIndicator::minimumSizeHint() const
 {
@@ -187,6 +224,20 @@ BusyIndicator::paintEvent( QPaintEvent * )
 	p.setBrush( gradient );
 
 	p.drawPath( path );
+	
+	if( d->showPercent )
+	{
+		p.setBrush( d->color );
+		p.setPen( d->color );
+		auto f = p.font();
+		f.setPixelSize( qRound( (double) d->innerRadius * 0.8 ) );
+		p.setFont( f );
+		p.drawText( QRect( -d->innerRadius, -d->innerRadius,
+				d->innerRadius * 2, d->innerRadius * 2 ),
+			Qt::AlignHCenter | Qt::AlignVCenter,
+			QString( "%1%2" ).arg( QString::number( d->percent ),
+				QStringLiteral( "%" ) ) );
+	}
 }
 
 void

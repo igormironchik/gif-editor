@@ -72,6 +72,18 @@ class BusyIndicator
 		By default, this property is 10.
 	*/
 	Q_PROPERTY( int radius READ radius WRITE setRadius )
+	/*!
+		\property percent
+		
+		\brief percent displayed in the center
+	*/
+	Q_PROPERTY( int percent READ percent WRITE setPercent )
+	/*!
+		\property showPercent
+		
+		\brief show percents in the center?
+	*/
+	Q_PROPERTY( bool showPercent READ showPercent WRITE setShowPercent )
 
 public:
 	BusyIndicator( QWidget * parent = nullptr );
@@ -91,6 +103,16 @@ public:
 	int radius() const;
 	//! Set radius.
 	void setRadius( int r );
+	
+	//! \return Percent.
+	int percent() const;
+	//! Set percent.
+	void setPercent( int p );
+	
+	//! \return Show percents in the center?
+	bool showPercent() const;
+	//! Set show percents in the center.
+	void setShowPercent( bool on = true );
 
 	QSize minimumSizeHint() const override;
 	QSize sizeHint() const override;
